@@ -343,6 +343,10 @@
                 <i class="fa-solid fa-receipt"></i>
                 <span>Bill History</span>
             </button>
+            <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition text-gray-400 hover:text-white hover:bg-white/5">
+                <i class="fa-solid fa-gear"></i>
+                <span>Store Settings</span>
+            </button>
         </div>
     </nav>
 
@@ -637,9 +641,88 @@
                             </tr>
                         </thead>
                         <tbody id="history-table-body" class="divide-y divide-white/5">
-                            <!-- History populated dynamically -->
-                        </tbody>
-                    </table>
+        <!-- TAB 4: STORE SETTINGS -->
+        <div id="tab-settings" class="tab-content hidden space-y-6 animate-pop-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold font-outfit text-white">Store Settings & System Preferences</h2>
+                    <p class="text-xs text-gray-400">Customize store profile, billing defaults, and manage system backups</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Store Profile Settings -->
+                <div class="glass-card rounded-2xl p-6 border border-white/10 space-y-4">
+                    <div class="flex items-center gap-2 pb-3 border-b border-white/10 text-brand-400">
+                        <i class="fa-solid fa-store text-lg"></i>
+                        <h3 class="font-bold text-white text-base">Store Profile & Receipt Details</h3>
+                    </div>
+
+                    <form onsubmit="handleSaveStoreProfile(event)" class="space-y-3 text-xs">
+                        <div>
+                            <label class="text-gray-300 block mb-1 font-medium">Store Name</label>
+                            <input type="text" id="setting-store-name" required class="w-full glass-input px-3 py-2 rounded-xl">
+                        </div>
+
+                        <div>
+                            <label class="text-gray-300 block mb-1 font-medium">Tagline / Subtitle</label>
+                            <input type="text" id="setting-store-tagline" class="w-full glass-input px-3 py-2 rounded-xl">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-gray-300 block mb-1 font-medium">Phone Number</label>
+                                <input type="text" id="setting-store-phone" class="w-full glass-input px-3 py-2 rounded-xl">
+                            </div>
+                            <div>
+                                <label class="text-gray-300 block mb-1 font-medium">Store Address</label>
+                                <input type="text" id="setting-store-address" class="w-full glass-input px-3 py-2 rounded-xl">
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-semibold flex items-center gap-2 text-xs shadow-lg shadow-brand-600/30">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Profile Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Backup & Data Management -->
+                <div class="glass-card rounded-2xl p-6 border border-white/10 space-y-4">
+                    <div class="flex items-center gap-2 pb-3 border-b border-white/10 text-emerald-400">
+                        <i class="fa-solid fa-database text-lg"></i>
+                        <h3 class="font-bold text-white text-base">Data Backup & Restore</h3>
+                    </div>
+
+                    <div class="space-y-4 text-xs">
+                        <p class="text-gray-300 leading-relaxed">
+                            Export a backup copy of your stock catalog, bill history, and store settings to a JSON file.
+                        </p>
+
+                        <div class="flex flex-wrap items-center gap-3 pt-1">
+                            <button onclick="exportSystemData()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold flex items-center gap-2 text-xs shadow-lg shadow-emerald-600/30">
+                                <i class="fa-solid fa-download"></i> Export Data (Backup JSON)
+                            </button>
+
+                            <label class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-white/10 rounded-xl font-semibold flex items-center gap-2 text-xs cursor-pointer">
+                                <i class="fa-solid fa-upload text-indigo-400"></i> Restore Data
+                                <input type="file" id="import-json-file" accept=".json" onchange="importSystemData(event)" class="hidden">
+                            </label>
+                        </div>
+
+                        <div class="pt-4 border-t border-white/10">
+                            <h4 class="font-bold text-red-400 mb-2">Danger Zone</h4>
+                            <div class="flex items-center gap-3">
+                                <button onclick="clearHistoryData()" class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 rounded-xl font-semibold text-xs">
+                                    <i class="fa-solid fa-trash"></i> Clear Sales History
+                                </button>
+                                <button onclick="resetItemsToDefault()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-white/10 rounded-xl font-semibold text-xs">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset Catalogue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -773,9 +856,6 @@
                 <button onclick="window.print()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2">
                     <i class="fa-solid fa-print"></i> Print Bill Now
                 </button>
-                <button onclick="shareOnWhatsApp()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2">
-                    <i class="fa-brands fa-whatsapp text-sm"></i> Share via WhatsApp
-                </button>
             </div>
 
         </div>
@@ -813,6 +893,18 @@
             changeBackgroundTheme(savedTheme);
             document.getElementById('theme-selector').value = savedTheme;
 
+            // Load store profile settings if present
+            const profile = JSON.parse(localStorage.getItem('krupa_store_profile')) || {
+                name: 'Krupa Store',
+                tagline: 'Retail Fancy & Grocery Store',
+                phone: '+91 9876543210',
+                address: 'Main Market Road'
+            };
+            document.getElementById('setting-store-name').value = profile.name;
+            document.getElementById('setting-store-tagline').value = profile.tagline;
+            document.getElementById('setting-store-phone').value = profile.phone;
+            document.getElementById('setting-store-address').value = profile.address;
+
             initParticleCanvas();
             updateClock();
             setInterval(updateClock, 1000);
@@ -823,6 +915,85 @@
             updateHeaderStats();
             document.getElementById('current-bill-no').innerText = `Bill #${currentBillNumber}`;
         });
+
+        // ================= SETTINGS & DATA BACKUP HANDLERS =================
+        function handleSaveStoreProfile(e) {
+            e.preventDefault();
+            const profile = {
+                name: document.getElementById('setting-store-name').value,
+                tagline: document.getElementById('setting-store-tagline').value,
+                phone: document.getElementById('setting-store-phone').value,
+                address: document.getElementById('setting-store-address').value
+            };
+            localStorage.setItem('krupa_store_profile', JSON.stringify(profile));
+            alert('Store settings saved successfully!');
+        }
+
+        function exportSystemData() {
+            const data = {
+                items: items,
+                bills: billsHistory,
+                lastBillNo: currentBillNumber,
+                theme: localStorage.getItem('krupa_theme') || 'theme-slate-pro',
+                exportDate: new Date().toISOString()
+            };
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `krupa_store_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importSystemData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = JSON.parse(evt.target.result);
+                    if (data.items) {
+                        items = data.items;
+                        localStorage.setItem('krupa_items', JSON.stringify(items));
+                    }
+                    if (data.bills) {
+                        billsHistory = data.bills;
+                        localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+                    }
+                    if (data.lastBillNo) {
+                        currentBillNumber = data.lastBillNo;
+                        localStorage.setItem('krupa_last_bill_no', currentBillNumber.toString());
+                    }
+                    alert('Data restored successfully!');
+                    location.reload();
+                } catch (err) {
+                    alert('Invalid backup JSON file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearHistoryData() {
+            if (confirm('Are you sure you want to clear all sales history and Udhar logs?')) {
+                billsHistory = [];
+                localStorage.removeItem('krupa_bills');
+                renderHistoryTable();
+                updateHeaderStats();
+                alert('Sales history cleared!');
+            }
+        }
+
+        function resetItemsToDefault() {
+            if (confirm('Reset stock catalogue to default items?')) {
+                items = [...DEFAULT_ITEMS];
+                localStorage.setItem('krupa_items', JSON.stringify(items));
+                renderPosItems();
+                renderItemsTable();
+                alert('Catalogue reset to defaults!');
+            }
+        }
 
         // Theme Change Function
         function changeBackgroundTheme(themeClass) {
@@ -945,6 +1116,8 @@
             document.getElementById('tab-pos').classList.add('hidden');
             document.getElementById('tab-items').classList.add('hidden');
             document.getElementById('tab-history').classList.add('hidden');
+            const settingsTab = document.getElementById('tab-settings');
+            if (settingsTab) settingsTab.classList.add('hidden');
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.className = 'tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition text-gray-400 hover:text-white hover:bg-white/5';
@@ -952,7 +1125,9 @@
 
             document.getElementById(`tab-${tabName}`).classList.remove('hidden');
             const activeBtn = document.getElementById(`tab-btn-${tabName}`);
-            activeBtn.className = 'tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition bg-brand-600 text-white shadow-lg shadow-brand-600/30';
+            if (activeBtn) {
+                activeBtn.className = 'tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition bg-brand-600 text-white shadow-lg shadow-brand-600/30';
+            }
         }
 
         // ================= PAYMENT MODE TOGGLE =================
