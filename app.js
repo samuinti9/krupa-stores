@@ -14,9 +14,55 @@ const DEFAULT_ITEMS = [
     { id: 10, name: 'Wheat Flour 5kg', category: 'grocery', price: 230, stock: 50 }
 ];
 
+// Default Sample Bills History
+const DEFAULT_BILLS = [
+    {
+        billNo: 1000,
+        date: new Date(Date.now() - 3600000 * 4).toLocaleString(),
+        customerName: 'Ramesh Kumar',
+        customerPhone: '9876543210',
+        items: [
+            { id: 1, name: 'Fancy Bangle Set', price: 150, qty: 2 },
+            { id: 8, name: 'Crystal Sugar 1kg', price: 48, qty: 1 }
+        ],
+        subtotal: 348,
+        discount: 0,
+        grandTotal: 348,
+        paymentStatus: 'paid'
+    },
+    {
+        billNo: 999,
+        date: new Date(Date.now() - 3600000 * 24).toLocaleString(),
+        customerName: 'Suresh Reddy',
+        customerPhone: '9812345678',
+        items: [
+            { id: 6, name: 'Premium Rice 5kg', price: 340, qty: 1 },
+            { id: 7, name: 'Refined Cooking Oil 1L', price: 145, qty: 2 }
+        ],
+        subtotal: 630,
+        discount: 30,
+        grandTotal: 600,
+        paymentStatus: 'credit'
+    },
+    {
+        billNo: 998,
+        date: new Date(Date.now() - 3600000 * 48).toLocaleString(),
+        customerName: 'Anitha Sharma',
+        customerPhone: '9765432109',
+        items: [
+            { id: 2, name: 'Lipstick Matte Edition', price: 220, qty: 1 },
+            { id: 5, name: 'Nail Polish Velvet Red', price: 65, qty: 2 }
+        ],
+        subtotal: 350,
+        discount: 10,
+        grandTotal: 340,
+        paymentStatus: 'paid'
+    }
+];
+
 // App State Management
 let items = JSON.parse(localStorage.getItem('krupa_items')) || DEFAULT_ITEMS;
-let billsHistory = JSON.parse(localStorage.getItem('krupa_bills')) || [];
+let billsHistory = JSON.parse(localStorage.getItem('krupa_bills')) || DEFAULT_BILLS;
 let currentCart = [];
 let currentPosFilter = 'all';
 let currentHistoryFilter = 'all';
