@@ -74,20 +74,21 @@ let currentBillNumber = parseInt(localStorage.getItem('krupa_last_bill_no') || '
 let db = null;
 let isFirebaseConnected = false;
 
-const defaultFirebaseConfig = {
-    apiKey: "AIzaSyKrupaFancyStoreKeyDemo12345678",
-    authDomain: "krupa-stores-pos.firebaseapp.com",
-    projectId: "krupa-stores-pos",
-    storageBucket: "krupa-stores-pos.appspot.com",
-    messagingSenderId: "109876543210",
-    appId: "1:109876543210:web:abcdef1234567890"
-};
-
 function initFirebaseDatabase() {
     try {
         if (typeof firebase !== 'undefined') {
             const savedConfigStr = localStorage.getItem('krupa_firebase_config');
-            const config = savedConfigStr ? JSON.parse(savedConfigStr) : defaultFirebaseConfig;
+            if (!savedConfigStr) {
+                console.info('Firebase Cloud credentials not configured yet. Operating in local mobile storage mode.');
+                updateFirebaseBadge(false, 'Local Mobile DB 📱');
+                return;
+            }
+
+            const config = JSON.parse(savedConfigStr);
+            if (!config.apiKey || !config.projectId) {
+                updateFirebaseBadge(false, 'Local Mobile DB 📱');
+                return;
+            }
 
             if (!firebase.apps.length) {
                 firebase.initializeApp(config);
@@ -101,30 +102,101 @@ function initFirebaseDatabase() {
             });
 
             isFirebaseConnected = true;
-            updateFirebaseBadge(true);
+            updateFirebaseBadge(true, 'Cloud DB Active ☁️');
             listenToFirebaseCollections();
         } else {
             console.warn('Firebase SDK not loaded. Operating in local mobile storage mode.');
-            updateFirebaseBadge(false);
+            updateFirebaseBadge(false, 'Local Mobile DB 📱');
         }
     } catch (e) {
         console.warn('Firebase init fallback to local mobile storage:', e);
-        updateFirebaseBadge(false);
+        updateFirebaseBadge(false, 'Local Mobile DB 📱');
     }
 }
 
-function updateFirebaseBadge(connected) {
+function updateFirebaseBadge(connected, message) {
     const badge = document.getElementById('firebase-sync-status');
     const text = document.getElementById('firebase-sync-text');
+    const settingBadge = document.getElementById('setting-firebase-status-badge');
+
     if (badge && text) {
         if (connected) {
             badge.className = 'flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm';
-            text.innerText = 'Cloud DB Active ☁️';
+            text.innerText = message || 'Cloud DB Active ☁️';
         } else {
             badge.className = 'flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm';
-            text.innerText = 'Local Mobile DB 📱';
+            text.innerText = message || 'Local Mobile DB 📱';
         }
     }
+
+    if (settingBadge) {
+        if (connected) {
+            settingBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+            settingBadge.innerText = '☁️ Cloud DB Connected';
+        } else {
+            settingBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30';
+            settingBadge.innerText = '📱 Local Mobile DB Active';
+        }
+    }
+}
+
+function handleSaveFirebaseConfig(e) {
+    e.preventDefault();
+    const apiKey = document.getElementById('fb-config-apikey').value.trim();
+    const projectId = document.getElementById('fb-config-projectid').value.trim();
+    const authDomain = document.getElementById('fb-config-authdomain').value.trim();
+    const appId = document.getElementById('fb-config-appid').value.trim();
+
+    if (!apiKey || !projectId) {
+        showToastNotification('⚠️ API Key and Project ID are required for Firebase Cloud connection!', 'warning');
+        return;
+    }
+
+    const config = {
+        apiKey,
+        projectId,
+        authDomain: authDomain || `${projectId}.firebaseapp.com`,
+        storageBucket: `${projectId}.appspot.com`,
+        messagingSenderId: "109876543210",
+        appId: appId || "1:109876543210:web:abcdef1234567890"
+    };
+
+    localStorage.setItem('krupa_firebase_config', JSON.stringify(config));
+    showToastNotification('Firebase Cloud Configuration saved! Connecting...', 'info');
+
+    try {
+        if (firebase.apps.length) {
+            firebase.app().delete().then(() => {
+                initFirebaseDatabase();
+                syncLocalToCloudDB();
+            }).catch(() => {
+                initFirebaseDatabase();
+                syncLocalToCloudDB();
+            });
+        } else {
+            initFirebaseDatabase();
+            syncLocalToCloudDB();
+        }
+    } catch (err) {
+        console.warn('Re-init error:', err);
+    }
+}
+
+function syncLocalToCloudDB() {
+    if (!db || !isFirebaseConnected) {
+        showToastNotification('Please configure and connect Firebase Cloud DB first!', 'warning');
+        return;
+    }
+
+    billsHistory.forEach(bill => {
+        db.collection('krupa_bills').doc(bill.billNo.toString()).set(bill, { merge: true }).catch(err => console.warn('Cloud sync error for bill:', err));
+    });
+
+    items.forEach(item => {
+        db.collection('krupa_items').doc(item.id.toString()).set(item, { merge: true }).catch(err => console.warn('Cloud sync error for item:', err));
+    });
+
+    showToastNotification('☁️ Syncing all local bills and items to Cloud Database...', 'success');
 }
 
 function listenToFirebaseCollections() {
