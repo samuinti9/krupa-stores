@@ -134,6 +134,30 @@ document.addEventListener('mousemove', (e) => {
     }
 });
 
+// SLEEK NON-BLOCKING TOAST NOTIFICATION ENGINE
+function showToastNotification(msg, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    const bgClass = type === 'error' ? 'bg-red-600 text-white' : type === 'warning' ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white';
+    const iconClass = type === 'error' ? 'fa-triangle-exclamation' : type === 'warning' ? 'fa-circle-exclamation' : 'fa-circle-check';
+
+    toast.className = `${bgClass} px-4 py-3 rounded-xl shadow-2xl font-semibold text-xs flex items-center gap-2.5 transition-all duration-300 transform translate-y-[-10px] opacity-0 pointer-events-auto border border-white/20`;
+    toast.innerHTML = `<i class="fa-solid ${iconClass} text-sm"></i><span>${msg}</span>`;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.remove('translate-y-[-10px]', 'opacity-0');
+    }, 10);
+
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-[-10px]');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 // ================= SETTINGS & DATA BACKUP HANDLERS =================
 function handleSaveStoreProfile(e) {
     e.preventDefault();
@@ -144,7 +168,7 @@ function handleSaveStoreProfile(e) {
         address: document.getElementById('setting-store-address').value
     };
     localStorage.setItem('krupa_store_profile', JSON.stringify(profile));
-    alert('Store settings saved successfully!');
+    showToastNotification('Store settings saved successfully!', 'success');
 }
 
 function exportSystemData() {
@@ -410,7 +434,7 @@ function updateCalcDisplay() {
 function addCalcResultToBill() {
     let amount = parseFloat(calcVal);
     if (isNaN(amount) || amount <= 0) {
-        alert('Please calculate a valid amount first');
+        showToastNotification('Please calculate a valid amount first', 'warning');
         return;
     }
     addToCartDirect('Calc Quick Item', amount, 1);
@@ -575,7 +599,7 @@ function calculateChange() {
 // CHECKOUT & BILL GENERATION
 function checkoutBill(showReceiptModal) {
     if (currentCart.length === 0) {
-        alert('Please add items to bill before saving');
+        showToastNotification('Please add items to bill before saving', 'warning');
         return;
     }
 
@@ -583,7 +607,7 @@ function checkoutBill(showReceiptModal) {
     let custPhone = document.getElementById('cust-phone').value.trim();
 
     if (currentPaymentMode === 'credit' && !custName) {
-        alert('⚠️ Customer Name is required for Credit (Udhar) Bills as proof!');
+        showToastNotification('⚠️ Customer Name is required for Credit (Udhar) Bills as proof!', 'warning');
         document.getElementById('cust-name').focus();
         return;
     }
@@ -619,7 +643,7 @@ function checkoutBill(showReceiptModal) {
     if (showReceiptModal) {
         openReceiptModal(billData);
     } else {
-        alert(`Bill #${billData.billNo} saved successfully as ${currentPaymentMode.toUpperCase()}! Total: ₹${grandTotal}`);
+        showToastNotification(`Bill #${billData.billNo} saved successfully as ${currentPaymentMode.toUpperCase()}! Total: ₹${grandTotal}`, 'success');
     }
 
     clearBillCart();
@@ -789,7 +813,7 @@ function markBillAsPaid(billNo) {
         localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
         renderHistoryTable();
         updateHeaderStats();
-        alert(`Bill #${billNo} has been updated to PAID!`);
+        showToastNotification(`Bill #${billNo} updated to PAID!`, 'success');
     }
 }
 
