@@ -168,6 +168,36 @@ body.theme-dark thead.bg-gray-900\/80 {
     transform: translateY(-2px);
 }
 
+/* PROOF RECEIPT MODAL ALWAYS CLEAN WHITE & LEGIBLE */
+#receipt-modal .glass-card,
+#printable-receipt-area {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+#printable-receipt-area h2,
+#printable-receipt-area p,
+#printable-receipt-area span,
+#printable-receipt-area td,
+#printable-receipt-area th {
+    color: #0f172a;
+}
+
+#printable-receipt-area .text-gray-500,
+#printable-receipt-area .text-gray-600 {
+    color: #64748b !important;
+}
+
+#printable-receipt-area .text-red-700,
+#printable-receipt-area .text-red-600 {
+    color: #b91c1c !important;
+}
+
+#printable-receipt-area .text-emerald-700,
+#printable-receipt-area .text-emerald-600 {
+    color: #047857 !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #f1f5f9; }

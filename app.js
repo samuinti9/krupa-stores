@@ -655,11 +655,11 @@ function openReceiptModal(bill) {
     }
 
     document.getElementById('rec-items-list').innerHTML = bill.items.map(item => `
-        <tr>
-            <td class="py-1 font-medium">${item.name}</td>
-            <td class="py-1 text-center font-mono">${item.qty}</td>
-            <td class="py-1 text-right font-mono">₹${item.price}</td>
-            <td class="py-1 text-right font-mono font-bold">₹${item.price * item.qty}</td>
+        <tr class="border-b border-slate-200">
+            <td class="py-1.5 font-semibold text-slate-900 text-left">${item.name}</td>
+            <td class="py-1.5 text-center font-mono font-medium text-slate-800">${item.qty}</td>
+            <td class="py-1.5 text-right font-mono text-slate-700">₹${item.price}</td>
+            <td class="py-1.5 text-right font-mono font-bold text-slate-900">₹${item.price * item.qty}</td>
         </tr>
     `).join('');
 
