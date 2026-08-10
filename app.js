@@ -42,7 +42,8 @@ const DEFAULT_BILLS = [
         subtotal: 630,
         discount: 30,
         grandTotal: 600,
-        paymentStatus: 'credit'
+        paymentStatus: 'credit',
+        isBookNoted: true
     },
     {
         billNo: 998,
@@ -369,18 +370,21 @@ function setPaymentMode(mode) {
     const paidBtn = document.getElementById('pay-mode-paid');
     const creditBtn = document.getElementById('pay-mode-credit');
     const warning = document.getElementById('credit-warning-note');
+    const bookOption = document.getElementById('credit-book-note-option');
     const custInput = document.getElementById('cust-name');
 
     if (mode === 'paid') {
         paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-emerald-600 text-white shadow';
         creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-red-300 hover:text-white';
-        warning.classList.add('hidden');
-        custInput.placeholder = "Customer Name (Optional)";
+        if (warning) warning.classList.add('hidden');
+        if (bookOption) bookOption.classList.add('hidden');
+        if (custInput) custInput.placeholder = "Customer Name (Optional)";
     } else {
         paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-emerald-300 hover:text-white';
         creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-red-600 text-white shadow';
-        warning.classList.remove('hidden');
-        custInput.placeholder = "Customer Name (REQUIRED for Credit)";
+        if (warning) warning.classList.remove('hidden');
+        if (bookOption) bookOption.classList.remove('hidden');
+        if (custInput) custInput.placeholder = "Customer Name (REQUIRED for Credit)";
     }
 }
 
@@ -621,6 +625,7 @@ function checkoutBill(showReceiptModal) {
     let subtotal = parseFloat(document.getElementById('bill-subtotal').innerText);
     let discount = parseFloat(document.getElementById('bill-discount').value) || 0;
     let grandTotal = parseFloat(document.getElementById('bill-grand-total').innerText);
+    const isBookNotedVal = (currentPaymentMode === 'credit' && document.getElementById('check-book-noted')?.checked) || false;
 
     const billData = {
         billNo: currentBillNumber,
@@ -631,7 +636,8 @@ function checkoutBill(showReceiptModal) {
         subtotal: subtotal,
         discount: discount,
         grandTotal: grandTotal,
-        paymentStatus: currentPaymentMode
+        paymentStatus: currentPaymentMode,
+        isBookNoted: isBookNotedVal
     };
 
     billsHistory.unshift(billData);
@@ -643,6 +649,7 @@ function checkoutBill(showReceiptModal) {
 
     updateHeaderStats();
     renderHistoryTable();
+    renderCreditCustomersTable();
 
     if (showReceiptModal) {
         openReceiptModal(billData);
@@ -653,8 +660,21 @@ function checkoutBill(showReceiptModal) {
     clearBillCart();
 }
 
+function clearBillCart() {
+    currentCart = [];
+    document.getElementById('cust-name').value = '';
+    document.getElementById('cust-phone').value = '';
+    document.getElementById('bill-discount').value = '0';
+    const checkBook = document.getElementById('check-book-noted');
+    if (checkBook) checkBook.checked = false;
+    updateCartUI();
+}
+
+let currentOpenReceiptBillNo = null;
+
 // ================= RECEIPT MODAL =================
 function openReceiptModal(bill) {
+    currentOpenReceiptBillNo = bill.billNo;
     triggerCheckoutCelebration();
     document.getElementById('rec-bill-no').innerText = `Bill #${bill.billNo}`;
     document.getElementById('rec-datetime').innerText = `Date: ${bill.date}`;
@@ -662,16 +682,36 @@ function openReceiptModal(bill) {
     let isCredit = (bill.paymentStatus === 'credit');
     const stamp = document.getElementById('rec-status-stamp');
     const proofBox = document.getElementById('rec-credit-proof-box');
+    const bookStamp = document.getElementById('rec-book-noted-stamp');
+    const bookBtn = document.getElementById('rec-book-toggle-btn');
 
     if (isCredit) {
         stamp.className = 'py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block bg-red-100 text-red-700 border-red-400';
         stamp.innerText = '🔴 CREDIT BILL / UNPAID (KHATA)';
         proofBox.classList.remove('hidden');
         document.getElementById('rec-credit-proof-amt').innerText = bill.grandTotal;
+
+        if (bookStamp) {
+            if (bill.isBookNoted) {
+                bookStamp.className = 'mt-2 p-1.5 bg-emerald-100 border border-emerald-400 rounded text-center text-[10px] font-bold text-emerald-900 flex items-center justify-center gap-1';
+                document.getElementById('rec-book-noted-text').innerText = '📖 NOTED IN SHOP PHYSICAL REGISTER BOOK ✅';
+            } else {
+                bookStamp.className = 'mt-2 p-1.5 bg-amber-100 border border-amber-400 rounded text-center text-[10px] font-bold text-amber-900 flex items-center justify-center gap-1';
+                document.getElementById('rec-book-noted-text').innerText = '📝 NOT YET RECORDED IN PHYSICAL BOOK';
+            }
+        }
+
+        if (bookBtn) {
+            bookBtn.classList.remove('hidden');
+            bookBtn.innerHTML = bill.isBookNoted 
+                ? `<i class="fa-solid fa-circle-check"></i> Noted in Book` 
+                : `<i class="fa-solid fa-book"></i> Mark as Noted`;
+        }
     } else {
         stamp.className = 'py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block bg-emerald-100 text-emerald-700 border-emerald-400';
         stamp.innerText = '🟢 PAID BILL (CASH/ONLINE)';
         proofBox.classList.add('hidden');
+        if (bookBtn) bookBtn.classList.add('hidden');
     }
 
     if (bill.customerName !== 'Walk-in Customer' || bill.customerPhone) {
@@ -701,6 +741,12 @@ function openReceiptModal(bill) {
     document.getElementById('rec-grandtotal').innerText = bill.grandTotal;
 
     document.getElementById('receipt-modal').classList.remove('hidden');
+}
+
+function toggleCurrentReceiptBookNoted() {
+    if (currentOpenReceiptBillNo) {
+        toggleBookNoted(currentOpenReceiptBillNo);
+    }
 }
 
 function closeReceiptModal() {
@@ -949,6 +995,12 @@ function renderHistoryTable() {
             ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-500/20 text-red-300 border border-red-500/30 inline-flex items-center gap-1"><i class="fa-solid fa-clock"></i> CREDIT (UDHAR)</span>`
             : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 inline-flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> PAID</span>`;
 
+        let bookBadge = isCredit ? (
+            b.isBookNoted 
+                ? `<div class="mt-1 text-[10px] font-bold text-amber-300 flex items-center justify-center gap-1"><i class="fa-solid fa-book-bookmark"></i> Noted in Book</div>`
+                : `<div class="mt-1 text-[10px] font-medium text-gray-500 flex items-center justify-center gap-1"><i class="fa-solid fa-pen"></i> Not in Book</div>`
+        ) : '';
+
         return `
             <tr class="hover:bg-white/5 transition">
                 <td class="px-4 py-3 font-mono font-bold text-indigo-300">#${b.billNo}</td>
@@ -957,11 +1009,14 @@ function renderHistoryTable() {
                     ${b.customerName}
                     ${b.customerPhone ? `<div class="text-[10px] text-gray-400 font-mono"><i class="fa-solid fa-phone text-[9px] mr-1"></i>${b.customerPhone}</div>` : ''}
                 </td>
-                <td class="px-4 py-3 text-center">${statusBadge}</td>
+                <td class="px-4 py-3 text-center">${statusBadge}${bookBadge}</td>
                 <td class="px-4 py-3 text-center font-mono">${b.items.length} items</td>
                 <td class="px-4 py-3 text-right font-mono font-bold ${isCredit ? 'text-red-400' : 'text-emerald-400'}">₹${b.grandTotal}</td>
                 <td class="px-4 py-3 text-right space-x-1.5">
                     ${isCredit ? `
+                        <button onclick="toggleBookNoted(${b.billNo})" title="Toggle physical book status" class="px-2.5 py-1 ${b.isBookNoted ? 'bg-amber-600/80 hover:bg-amber-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30'} text-xs font-semibold rounded-lg shadow transition">
+                            <i class="fa-solid fa-book mr-1"></i> ${b.isBookNoted ? 'Noted' : '+ Book'}
+                        </button>
                         <button onclick="markBillAsPaid(${b.billNo})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow transition">
                             <i class="fa-solid fa-check mr-1"></i> Mark Paid
                         </button>
@@ -973,6 +1028,30 @@ function renderHistoryTable() {
             </tr>
         `;
     }).join('');
+}
+
+function toggleBookNoted(billNo) {
+    const bill = billsHistory.find(b => b.billNo === billNo);
+    if (!bill) return;
+
+    bill.isBookNoted = !bill.isBookNoted;
+    localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+    
+    renderHistoryTable();
+    renderCreditCustomersTable();
+
+    const noteText = bill.isBookNoted 
+        ? `Bill #${billNo} for ${bill.customerName} marked as NOTED IN SHOP PHYSICAL BOOK 📖!`
+        : `Bill #${billNo} marked as NOT IN BOOK 📝!`;
+
+    showToastNotification(noteText, bill.isBookNoted ? 'success' : 'info');
+
+    if (currentOpenReceiptBillNo === billNo) {
+        const receiptModal = document.getElementById('receipt-modal');
+        if (receiptModal && !receiptModal.classList.contains('hidden')) {
+            openReceiptModal(bill);
+        }
+    }
 }
 
 // ================= SEPARATE CREDIT CUSTOMERS (UDHAR KHATA) DIRECTORY =================
