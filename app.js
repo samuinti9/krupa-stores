@@ -70,10 +70,145 @@ let currentHistoryFilter = 'all';
 let currentPaymentMode = 'credit';
 let currentBillNumber = parseInt(localStorage.getItem('krupa_last_bill_no') || '1001');
 
+// ================= FIREBASE CLOUD DATABASE ENGINE (FIRESTORE + OFFLINE MOBILE PERSISTENCE) =================
+let db = null;
+let isFirebaseConnected = false;
+
+const defaultFirebaseConfig = {
+    apiKey: "AIzaSyKrupaFancyStoreKeyDemo12345678",
+    authDomain: "krupa-stores-pos.firebaseapp.com",
+    projectId: "krupa-stores-pos",
+    storageBucket: "krupa-stores-pos.appspot.com",
+    messagingSenderId: "109876543210",
+    appId: "1:109876543210:web:abcdef1234567890"
+};
+
+function initFirebaseDatabase() {
+    try {
+        if (typeof firebase !== 'undefined') {
+            const savedConfigStr = localStorage.getItem('krupa_firebase_config');
+            const config = savedConfigStr ? JSON.parse(savedConfigStr) : defaultFirebaseConfig;
+
+            if (!firebase.apps.length) {
+                firebase.initializeApp(config);
+            }
+
+            db = firebase.firestore();
+
+            // Enable offline persistence for mobile phone execution
+            db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+                console.warn('Firestore offline persistence info:', err.code);
+            });
+
+            isFirebaseConnected = true;
+            updateFirebaseBadge(true);
+            listenToFirebaseCollections();
+        } else {
+            console.warn('Firebase SDK not loaded. Operating in local mobile storage mode.');
+            updateFirebaseBadge(false);
+        }
+    } catch (e) {
+        console.warn('Firebase init fallback to local mobile storage:', e);
+        updateFirebaseBadge(false);
+    }
+}
+
+function updateFirebaseBadge(connected) {
+    const badge = document.getElementById('firebase-sync-status');
+    const text = document.getElementById('firebase-sync-text');
+    if (badge && text) {
+        if (connected) {
+            badge.className = 'flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm';
+            text.innerText = 'Cloud DB Active ☁️';
+        } else {
+            badge.className = 'flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm';
+            text.innerText = 'Local Mobile DB 📱';
+        }
+    }
+}
+
+function listenToFirebaseCollections() {
+    if (!db) return;
+
+    // Real-time Firestore sync for Bills
+    db.collection('krupa_bills').onSnapshot(snapshot => {
+        if (!snapshot.empty) {
+            const cloudBills = [];
+            snapshot.forEach(doc => {
+                cloudBills.push(doc.data());
+            });
+            if (cloudBills.length > 0) {
+                cloudBills.sort((a, b) => b.billNo - a.billNo);
+                billsHistory = cloudBills;
+                localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+                renderHistoryTable();
+                renderCreditCustomersTable();
+                updateHeaderStats();
+            }
+        }
+    }, err => {
+        console.warn('Firestore Bills listener offline:', err);
+    });
+
+    // Real-time Firestore sync for Inventory Items
+    db.collection('krupa_items').onSnapshot(snapshot => {
+        if (!snapshot.empty) {
+            const cloudItems = [];
+            snapshot.forEach(doc => {
+                cloudItems.push(doc.data());
+            });
+            if (cloudItems.length > 0) {
+                cloudItems.sort((a, b) => a.id - b.id);
+                items = cloudItems;
+                localStorage.setItem('krupa_items', JSON.stringify(items));
+                renderPosItems();
+                renderItemsTable();
+            }
+        }
+    }, err => {
+        console.warn('Firestore Items listener offline:', err);
+    });
+}
+
+function saveBillToFirebase(billData) {
+    if (db && isFirebaseConnected) {
+        db.collection('krupa_bills').doc(billData.billNo.toString()).set(billData).catch(err => {
+            console.warn('Firestore bill save queued offline:', err);
+        });
+    }
+}
+
+function updateBillInFirebase(billData) {
+    if (db && isFirebaseConnected) {
+        db.collection('krupa_bills').doc(billData.billNo.toString()).set(billData, { merge: true }).catch(err => {
+            console.warn('Firestore bill update queued offline:', err);
+        });
+    }
+}
+
+function saveItemToFirebase(itemData) {
+    if (db && isFirebaseConnected) {
+        db.collection('krupa_items').doc(itemData.id.toString()).set(itemData).catch(err => {
+            console.warn('Firestore item save queued offline:', err);
+        });
+    }
+}
+
+function deleteItemFromFirebase(itemId) {
+    if (db && isFirebaseConnected) {
+        db.collection('krupa_items').doc(itemId.toString()).delete().catch(err => {
+            console.warn('Firestore item delete queued offline:', err);
+        });
+    }
+}
+
 let calcVal = '0';
 let calcExp = '';
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Firebase Database Engine for Mobile Phone POS
+    initFirebaseDatabase();
+
     // Restore saved theme mode (Light vs Dark)
     const savedThemeMode = localStorage.getItem('krupa_theme_mode') || 'light';
     setThemeMode(savedThemeMode);
@@ -639,6 +774,7 @@ function checkoutBill(showReceiptModal) {
 
     billsHistory.unshift(billData);
     localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+    saveBillToFirebase(billData);
     
     currentBillNumber++;
     localStorage.setItem('krupa_last_bill_no', currentBillNumber.toString());
@@ -808,16 +944,20 @@ function handleSaveItem(e) {
     const price = parseFloat(document.getElementById('modal-item-price').value);
     const stock = parseInt(document.getElementById('modal-item-stock').value) || 0;
 
+    let savedItemData;
     if (id) {
         let idx = items.findIndex(i => i.id == id);
         if (idx !== -1) {
-            items[idx] = { id: parseInt(id), name, category: cat, price, stock };
+            savedItemData = { id: parseInt(id), name, category: cat, price, stock };
+            items[idx] = savedItemData;
         }
     } else {
-        items.push({ id: Date.now(), name, category: cat, price, stock });
+        savedItemData = { id: Date.now(), name, category: cat, price, stock };
+        items.push(savedItemData);
     }
 
     localStorage.setItem('krupa_items', JSON.stringify(items));
+    if (savedItemData) saveItemToFirebase(savedItemData);
     renderItemsTable();
     renderPosItems();
     closeItemModal();
@@ -827,6 +967,7 @@ function deleteItem(id) {
     if (confirm('Are you sure you want to delete this item?')) {
         items = items.filter(i => i.id !== id);
         localStorage.setItem('krupa_items', JSON.stringify(items));
+        deleteItemFromFirebase(id);
         renderItemsTable();
         renderPosItems();
     }
@@ -891,6 +1032,7 @@ function markBillAsPaid(billNo) {
     if (confirm(`Are you sure you want to mark Bill #${billNo} for ${bill.customerName} (₹${bill.grandTotal}) as PAID?`)) {
         bill.paymentStatus = 'paid';
         localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+        updateBillInFirebase(bill);
         renderHistoryTable();
         renderCreditCustomersTable();
         updateHeaderStats();
@@ -1033,6 +1175,7 @@ function toggleBookNoted(billNo) {
 
     bill.isBookNoted = !bill.isBookNoted;
     localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+    updateBillInFirebase(bill);
     
     renderHistoryTable();
     renderCreditCustomersTable();
@@ -1136,6 +1279,7 @@ function payCustomerCreditAll(custName, custPhone) {
             b.paymentStatus = 'paid';
             settledTotal += b.grandTotal;
             matchCount++;
+            updateBillInFirebase(b);
         }
     });
 
