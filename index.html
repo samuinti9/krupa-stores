@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krupa Store - Smart Billing & Inventory</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    },
+                    fontFamily: {
+                        outfit: ['Outfit', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base Page Setup */
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            transition: background 0.5s ease, color 0.3s ease;
+        }
+
+        /* DYNAMIC BACKGROUND THEMES */
+        /* DYNAMIC BACKGROUND THEMES */
+        .theme-aurora {
+            background-color: #030712;
+            color: #f3f4f6;
+        }
+        .theme-aurora .bg-mesh {
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 90% 10%, rgba(99, 102, 241, 0.28) 0%, transparent 45%),
+                radial-gradient(circle at 50% 90%, rgba(236, 72, 153, 0.2) 0%, transparent 50%);
+        }
+
+        .theme-royal-gold {
+            background-color: #0c0a09;
+            color: #f5f5f4;
+        }
+        .theme-royal-gold .bg-mesh {
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(217, 119, 6, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 80% 20%, rgba(180, 83, 9, 0.2) 0%, transparent 45%),
+                radial-gradient(circle at 50% 80%, rgba(245, 158, 11, 0.15) 0%, transparent 50%);
+        }
+
+        .theme-neon-sunset {
+            background-color: #090514;
+            color: #f3f4f6;
+        }
+        .theme-neon-sunset .bg-mesh {
+            background: 
+                radial-gradient(circle at 15% 30%, rgba(244, 63, 94, 0.28) 0%, transparent 45%),
+                radial-gradient(circle at 85% 20%, rgba(168, 85, 247, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 50% 85%, rgba(249, 115, 22, 0.22) 0%, transparent 50%);
+        }
+
+        .theme-cyber-blue {
+            background-color: #020617;
+            color: #f8fafc;
+        }
+        .theme-cyber-blue .bg-mesh {
+            background: 
+                radial-gradient(circle at 15% 15%, rgba(14, 165, 233, 0.28) 0%, transparent 45%),
+                radial-gradient(circle at 85% 15%, rgba(99, 102, 241, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 50% 80%, rgba(6, 182, 212, 0.2) 0%, transparent 50%);
+        }
+
+        .theme-emerald-matrix {
+            background-color: #021a12;
+            color: #ecfdf5;
+        }
+        .theme-emerald-matrix .bg-mesh {
+            background: 
+                radial-gradient(circle at 15% 25%, rgba(16, 185, 129, 0.3) 0%, transparent 45%),
+                radial-gradient(circle at 85% 15%, rgba(5, 150, 105, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 50% 85%, rgba(52, 211, 153, 0.2) 0%, transparent 50%);
+        }
+
+        .theme-cosmic-purple {
+            background-color: #120324;
+            color: #faf5ff;
+        }
+        .theme-cosmic-purple .bg-mesh {
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(192, 38, 211, 0.3) 0%, transparent 45%),
+                radial-gradient(circle at 80% 20%, rgba(147, 51, 234, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.2) 0%, transparent 50%);
+        }
+
+        .theme-dark-obsidian {
+            background-color: #09090b;
+            color: #f4f4f5;
+        }
+        .theme-dark-obsidian .bg-mesh {
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(225, 29, 72, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 80% 20%, rgba(71, 85, 105, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 50% 80%, rgba(30, 41, 59, 0.3) 0%, transparent 50%);
+        }
+
+        .theme-light-glass {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+        .theme-light-glass .bg-mesh {
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+        }
+        .theme-light-glass .glass-card {
+            background: rgba(255, 255, 255, 0.85) !important;
+            border: 1px solid rgba(0, 0, 0, 0.08) !important;
+            color: #0f172a !important;
+        }
+        .theme-light-glass .glass-input {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border: 1px solid rgba(0, 0, 0, 0.15) !important;
+            color: #0f172a !important;
+        }
+        .theme-light-glass .text-gray-100, 
+        .theme-light-glass .text-gray-200, 
+        .theme-light-glass .text-gray-300 {
+            color: #1e293b !important;
+        }
+        .theme-light-glass .text-gray-400 {
+            color: #64748b !important;
+        }
+
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            filter: blur(50px);
+            animation: meshFloat 22s ease-in-out infinite alternate;
+            transition: background 0.8s ease-in-out;
+        }
+
+        @keyframes meshFloat {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.1) translate(-15px, 20px); }
+            100% { transform: scale(1) translate(15px, -15px); }
+        }
+
+        /* GLASSMORPHISM ULTRA PREMIUM DESIGN SYSTEM */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.55);
+            -webkit-backdrop-filter: blur(24px);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 25px 60px 0 rgba(0, 0, 0, 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.07);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            transition: all 0.25s ease;
+        }
+
+        .glass-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(99, 102, 241, 0.8);
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.5), inset 0 0 8px rgba(99, 102, 241, 0.2);
+        }
+
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.08);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* Ambient Glass Orbs for Refraction & Depth */
+        .glass-orb {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: orbPulse 14s ease-in-out infinite alternate;
+        }
+        .glass-orb-1 {
+            top: 5%;
+            left: 10%;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.45), transparent 70%);
+        }
+        .glass-orb-2 {
+            bottom: 10%;
+            right: 12%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.35), transparent 70%);
+            animation-delay: -5s;
+        }
+        .glass-orb-3 {
+            top: 45%;
+            left: 45%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.3), transparent 70%);
+            animation-delay: -9s;
+        }
+
+        @keyframes orbPulse {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.15) translate(-30px, 30px); }
+            100% { transform: scale(0.9) translate(20px, -20px); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.7); }
+
+        .calc-btn {
+            transition: all 0.15s ease;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .calc-btn:active { transform: scale(0.92); }
+    </style>
+</head>
+<body class="theme-aurora antialiased min-h-screen flex flex-col">
+
+    <!-- Dynamic Ambient Background Layer -->
+    <div class="bg-mesh"></div>
+    <!-- Interactive JS Canvas Floating Particle Layer -->
+    <canvas id="particle-canvas" class="fixed inset-0 pointer-events-none z-[-1]"></canvas>
+    <!-- Floating Glassmorphic Ambient Orbs for Refraction -->
+    <div class="glass-orb glass-orb-1"></div>
+    <div class="glass-orb glass-orb-2"></div>
+    <div class="glass-orb glass-orb-3"></div>
+
+    <!-- Header Navigation Bar -->
+    <header class="glass-card sticky top-0 z-40 border-b border-white/10 px-4 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-pink-500 flex items-center justify-center shadow-lg shadow-brand-500/30">
+                <i class="fa-solid font-outfit fa-store text-xl text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-extrabold font-outfit tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-300">
+                    KRUPA <span class="text-indigo-400 font-semibold text-base px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30">STORE</span>
+                </h1>
+                <p class="text-xs text-gray-400">Retail Fancy & Grocery Store (Fullstack Edition)</p>
+            </div>
+        </div>
+
+        <!-- Background Theme Switcher Dropdown & Clock -->
+        <div class="flex items-center gap-3 flex-wrap">
+            <!-- Theme Picker -->
+            <div class="flex items-center gap-1 bg-gray-900/70 border border-white/10 p-1 rounded-xl text-xs">
+                <i class="fa-solid fa-palette text-indigo-400 ml-2 mr-1"></i>
+                <select id="theme-selector" title="Select Visual Theme" onchange="changeBackgroundTheme(this.value)" class="bg-transparent text-xs text-gray-200 font-medium border-none focus:outline-none cursor-pointer pr-2">
+                    <option value="theme-aurora" class="bg-gray-900 text-white">✨ Neon Aurora (Default)</option>
+                    <option value="theme-cyber-blue" class="bg-gray-900 text-white">💙 Cyber Blue</option>
+                    <option value="theme-royal-gold" class="bg-gray-900 text-white">👑 Royal Gold</option>
+                    <option value="theme-neon-sunset" class="bg-gray-900 text-white">🌅 Neon Sunset</option>
+                    <option value="theme-emerald-matrix" class="bg-gray-900 text-white">💚 Emerald Matrix</option>
+                    <option value="theme-cosmic-purple" class="bg-gray-900 text-white">💜 Cosmic Purple</option>
+                    <option value="theme-dark-obsidian" class="bg-gray-900 text-white">🖤 Dark Obsidian</option>
+                    <option value="theme-light-glass" class="bg-gray-900 text-white">☀️ Clean Light Glass</option>
+                </select>
+            </div>
+
+            <!-- Clock -->
+            <div class="hidden md:flex items-center gap-2 bg-gray-900/60 border border-white/5 px-3 py-1.5 rounded-xl text-xs text-gray-300">
+                <i class="fa-regular fa-clock text-indigo-400"></i>
+                <span id="current-clock" class="font-mono font-medium">--:--:--</span>
+            </div>
+
+            <!-- Sales Total -->
+            <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-xs text-emerald-400 font-semibold">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+                <span>Sales: <span id="header-today-sales">₹0</span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Navigation Tabs -->
+    <nav class="bg-gray-900/40 border-b border-white/5 px-4 lg:px-8 py-2">
+        <div class="flex items-center gap-2 overflow-x-auto">
+            <button onclick="switchTab('pos')" id="tab-btn-pos" class="tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition bg-brand-600 text-white shadow-lg shadow-brand-600/30">
+                <i class="fa-solid fa-calculator"></i>
+                <span>Billing & Calculator</span>
+            </button>
+            <button onclick="switchTab('items')" id="tab-btn-items" class="tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition text-gray-400 hover:text-white hover:bg-white/5">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span>Item Catalogue (<span id="items-count-badge">0</span>)</span>
+            </button>
+            <button onclick="switchTab('history')" id="tab-btn-history" class="tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition text-gray-400 hover:text-white hover:bg-white/5">
+                <i class="fa-solid fa-receipt"></i>
+                <span>Bill History</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 p-4 lg:p-6 max-w-7xl w-full mx-auto">
+        
+        <!-- SECTION 1: POS & CALCULATOR BILLING TAB -->
+        <div id="tab-pos" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Side: Quick Calculator & Custom Quick Add -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                
+                <!-- Custom Loose / Unlisted Item Fast Entry -->
+                <div class="glass-card rounded-2xl p-4 border border-white/10">
+                    <h3 class="font-outfit font-semibold text-sm text-gray-300 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-bolt text-amber-400"></i> Fast Item Input (Name + Price)
+                    </h3>
+                    <form onsubmit="handleQuickCustomAdd(event)" class="space-y-3">
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Item Name</label>
+                            <input type="text" id="quick-item-name" placeholder="e.g. Loose Sugar 1kg or Ribbon" required class="w-full glass-input px-3 py-2 rounded-xl text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-1">Price (₹)</label>
+                                <input type="number" step="0.5" id="quick-item-price" placeholder="45" required class="w-full glass-input px-3 py-2 rounded-xl text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-1">Qty</label>
+                                <input type="number" id="quick-item-qty" value="1" min="1" required class="w-full glass-input px-3 py-2 rounded-xl text-sm">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-indigo-600/80 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition border border-indigo-400/30">
+                            + Add Custom Item To Bill
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Built-In Billing Calculator -->
+                <div class="glass-card rounded-2xl p-4 border border-white/10 shadow-xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-outfit font-bold text-gray-200 flex items-center gap-2">
+                            <i class="fa-solid fa-calculator text-indigo-400"></i> Smart Calculator
+                        </h2>
+                        <span class="text-xs text-gray-400 font-mono">Quick Math</span>
+                    </div>
+
+                    <!-- Calculator Screen -->
+                    <div class="bg-gray-950/80 border border-indigo-500/30 rounded-xl p-3 mb-3 text-right">
+                        <div id="calc-expression" class="text-xs text-gray-400 font-mono h-4 overflow-hidden"></div>
+                        <div id="calc-display" class="text-2xl font-bold font-mono text-indigo-300 tracking-wider">0</div>
+                    </div>
+
+                    <!-- Calculator Numpad Grid -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="calcClear()" class="calc-btn p-3 bg-red-500/20 text-red-400 font-bold rounded-xl border border-red-500/30 hover:bg-red-500/30">C</button>
+                        <button onclick="calcBackspace()" class="calc-btn p-3 bg-gray-800 text-gray-300 font-bold rounded-xl border border-white/5 hover:bg-gray-700">⌫</button>
+                        <button onclick="calcOp('/')" class="calc-btn p-3 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">÷</button>
+                        <button onclick="calcOp('*')" class="calc-btn p-3 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">×</button>
+
+                        <button onclick="calcNum('7')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">7</button>
+                        <button onclick="calcNum('8')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">8</button>
+                        <button onclick="calcNum('9')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">9</button>
+                        <button onclick="calcOp('-')" class="calc-btn p-3 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">-</button>
+
+                        <button onclick="calcNum('4')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">4</button>
+                        <button onclick="calcNum('5')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">5</button>
+                        <button onclick="calcNum('6')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">6</button>
+                        <button onclick="calcOp('+')" class="calc-btn p-3 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">+</button>
+
+                        <button onclick="calcNum('1')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">1</button>
+                        <button onclick="calcNum('2')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">2</button>
+                        <button onclick="calcNum('3')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">3</button>
+                        <button onclick="calcEqual()" class="calc-btn row-span-2 p-3 bg-gradient-to-b from-brand-500 to-brand-700 text-white font-bold text-xl rounded-xl shadow-md hover:brightness-110 flex items-center justify-center">=</button>
+
+                        <button onclick="calcNum('0')" class="calc-btn col-span-2 p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">0</button>
+                        <button onclick="calcNum('.')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">.</button>
+                    </div>
+
+                    <!-- Push Calc Result as Quick Custom Item to Bill -->
+                    <button onclick="addCalcResultToBill()" class="w-full mt-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 text-sm">
+                        <i class="fa-solid fa-plus-circle"></i> Add Calc Total (₹<span id="calc-add-val">0</span>) to Bill
+                    </button>
+                </div>
+            </div>
+
+            <!-- Middle Side: Items Catalogue Selection Grid -->
+            <div class="lg:col-span-5 flex flex-col gap-4">
+                <div class="glass-card rounded-2xl p-4 border border-white/10 flex flex-col h-full">
+                    
+                    <!-- Search & Filter Header -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-sm"></i>
+                            <input type="text" id="pos-search" oninput="renderPosItems()" placeholder="Search item name or price..." class="w-full glass-input pl-10 pr-4 py-2 rounded-xl text-sm">
+                        </div>
+                        
+                        <!-- Category Filter Buttons -->
+                        <div class="flex items-center gap-1 bg-gray-900/60 p-1 rounded-xl border border-white/5 text-xs">
+                            <button onclick="setPosFilter('all')" id="filter-all" class="pos-filter-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-medium">All</button>
+                            <button onclick="setPosFilter('fancy')" id="filter-fancy" class="pos-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white">Fancy</button>
+                            <button onclick="setPosFilter('grocery')" id="filter-grocery" class="pos-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white">Grocery</button>
+                        </div>
+                    </div>
+
+                    <!-- Items Card Grid -->
+                    <div id="pos-items-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 overflow-y-auto max-h-[550px] pr-1">
+                        <!-- Items rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Active Bill / Cart Summary -->
+            <div class="lg:col-span-3 flex flex-col gap-4">
+                <div class="glass-card rounded-2xl p-4 border border-white/10 flex flex-col justify-between h-full shadow-2xl">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
+                            <div>
+                                <h2 class="font-outfit font-bold text-gray-100 flex items-center gap-2">
+                                    <i class="fa-solid fa-receipt text-indigo-400"></i> Current Bill
+                                </h2>
+                                <p class="text-xs text-gray-400" id="current-bill-no">Bill #1001</p>
+                            </div>
+                            <button onclick="clearBillCart()" class="text-xs text-red-400 hover:text-red-300 font-medium px-2 py-1 rounded-lg hover:bg-red-500/10">
+                                Clear Cart
+                            </button>
+                        </div>
+
+                        <!-- Payment Mode & Customer Details -->
+                        <div class="mb-3 space-y-2">
+                            <div>
+                                <label class="text-[11px] text-gray-300 font-semibold block mb-1">Payment Type</label>
+                                <div class="grid grid-cols-2 gap-1 bg-gray-900/80 p-1 rounded-xl border border-white/10 text-xs">
+                                    <button type="button" id="pay-mode-paid" onclick="setPaymentMode('paid')" class="pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-emerald-300 hover:text-white">
+                                        <i class="fa-solid fa-circle-check"></i> Paid
+                                    </button>
+                                    <button type="button" id="pay-mode-credit" onclick="setPaymentMode('credit')" class="pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-red-600 text-white shadow">
+                                        <i class="fa-solid fa-clock"></i> Credit (Udhar)
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <input type="text" id="cust-name" placeholder="Customer Name (REQUIRED for Credit)" class="w-full glass-input px-3 py-1.5 rounded-lg text-xs">
+                            </div>
+                            <div>
+                                <input type="tel" id="cust-phone" placeholder="WhatsApp / Phone No." class="w-full glass-input px-3 py-1.5 rounded-lg text-xs">
+                            </div>
+                            <div id="credit-warning-note" class="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 p-2 rounded-xl flex items-center gap-1.5 font-medium">
+                                <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Customer Name is required for Credit Bill proof!
+                            </div>
+                        </div>
+
+                        <!-- Cart Items List -->
+                        <div id="cart-items-container" class="space-y-2 max-h-[260px] overflow-y-auto pr-1 border-y border-white/5 py-2 my-2">
+                            <div id="empty-cart-msg" class="py-8 text-center text-gray-500">
+                                <i class="fa-solid fa-basket-shopping text-3xl mb-2 text-gray-600 block"></i>
+                                <p class="text-xs">No items in bill yet.</p>
+                                <p class="text-[11px] text-gray-600 mt-1">Click an item or use calculator/custom input</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bill Totals & Actions -->
+                    <div class="pt-3 border-t border-white/10 space-y-2">
+                        <div class="flex justify-between text-xs text-gray-300">
+                            <span>Subtotal</span>
+                            <span class="font-mono font-medium">₹<span id="bill-subtotal">0</span></span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-gray-300">
+                            <span>Discount (₹)</span>
+                            <input type="number" id="bill-discount" value="0" min="0" oninput="updateBillTotals()" class="w-20 glass-input text-right px-2 py-0.5 rounded text-xs font-mono">
+                        </div>
+                        
+                        <div class="flex justify-between items-center bg-indigo-950/60 p-2.5 rounded-xl border border-indigo-500/30 mt-2">
+                            <span class="font-outfit font-bold text-gray-100 text-sm">Grand Total</span>
+                            <span class="font-mono font-extrabold text-xl text-emerald-400">₹<span id="bill-grand-total">0</span></span>
+                        </div>
+
+                        <!-- Cash Tendered / Change Calculator -->
+                        <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+                            <div>
+                                <label class="text-[11px] text-gray-400 block mb-0.5">Cash Given</label>
+                                <input type="number" id="cash-given" placeholder="0" oninput="calculateChange()" class="w-full glass-input px-2 py-1 rounded text-xs font-mono">
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-gray-400 block mb-0.5">Return Change</label>
+                                <div id="cash-change" class="glass-input px-2 py-1 rounded text-xs font-mono font-bold text-amber-300 flex items-center justify-end h-[28px]">₹0</div>
+                            </div>
+                        </div>
+
+                        <!-- Submit / Print / Share Buttons -->
+                        <div class="grid grid-cols-2 gap-2 pt-2">
+                            <button onclick="checkoutBill(false)" class="py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/30">
+                                <i class="fa-solid fa-check-circle"></i> Save Bill
+                            </button>
+                            <button onclick="checkoutBill(true)" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/30">
+                                <i class="fa-solid fa-print"></i> Print & Share
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SECTION 2: ITEM CATALOGUE MANAGEMENT TAB -->
+        <div id="tab-items" class="hidden space-y-6">
+            
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-900/60 p-4 rounded-2xl border border-white/10">
+                <div>
+                    <h2 class="text-xl font-bold font-outfit text-white">Item Catalogue</h2>
+                    <p class="text-xs text-gray-400">Add, edit, or delete Fancy & Grocery items with their prices</p>
+                </div>
+                <button onclick="openAddItemModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-brand-500 hover:brightness-110 text-white text-sm font-semibold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                    <i class="fa-solid fa-plus"></i> Add New Item
+                </button>
+            </div>
+
+            <!-- Items Table -->
+            <div class="glass-card rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-gray-900/80 text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
+                            <tr>
+                                <th class="px-4 py-3">Item Name</th>
+                                <th class="px-4 py-3">Category</th>
+                                <th class="px-4 py-3 text-right">Price (₹)</th>
+                                <th class="px-4 py-3 text-center">Stock</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-table-body" class="divide-y divide-white/5">
+                            <!-- Items populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SECTION 3: BILL HISTORY TAB -->
+        <div id="tab-history" class="hidden space-y-6">
+            <div class="glass-card rounded-2xl p-4 border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold font-outfit text-white">Bill History & Udhar Register</h2>
+                    <p class="text-xs text-gray-400">View past bills, manage credit transactions & mark paid debts</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="text-right bg-emerald-950/60 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-emerald-400 tracking-wide">Paid Received</div>
+                        <div class="text-lg font-bold font-mono text-emerald-300" id="history-paid-sales">₹0</div>
+                    </div>
+                    <div class="text-right bg-red-950/60 border border-red-500/30 px-3 py-1.5 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-red-400 tracking-wide">Pending Credit (Udhar)</div>
+                        <div class="text-lg font-bold font-mono text-red-300" id="history-credit-sales">₹0</div>
+                    </div>
+                    <div class="text-right bg-indigo-950/60 border border-indigo-500/30 px-3 py-1.5 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Total Sales</div>
+                        <div class="text-lg font-bold font-mono text-indigo-300" id="history-total-sales">₹0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Filter Tabs -->
+            <div class="flex items-center justify-between gap-2 bg-gray-900/60 p-2 rounded-2xl border border-white/10 flex-wrap">
+                <div class="flex items-center gap-2">
+                    <button onclick="filterHistory('all')" id="hist-filter-all" class="hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow">
+                        All Bills (<span id="hist-count-all">0</span>)
+                    </button>
+                    <button onclick="filterHistory('paid')" id="hist-filter-paid" class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white">
+                        🟢 Paid Bills (<span id="hist-count-paid">0</span>)
+                    </button>
+                    <button onclick="filterHistory('credit')" id="hist-filter-credit" class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                        🔴 Credit (Udhar) Bills (<span id="hist-count-credit">0</span>)
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-gray-900/80 text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
+                            <tr>
+                                <th class="px-4 py-3">Bill No.</th>
+                                <th class="px-4 py-3">Date & Time</th>
+                                <th class="px-4 py-3">Customer Info</th>
+                                <th class="px-4 py-3 text-center">Payment Status</th>
+                                <th class="px-4 py-3 text-center">Items</th>
+                                <th class="px-4 py-3 text-right">Total Amount</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-white/5">
+                            <!-- History populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL 1: ADD / EDIT ITEM MODAL -->
+    <div id="item-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md hidden p-4">
+        <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-white/10 shadow-2xl relative">
+            <button onclick="closeItemModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <h3 id="modal-title" class="text-xl font-bold font-outfit text-white mb-4">Add New Item</h3>
+            
+            <form onsubmit="handleSaveItem(event)" class="space-y-4">
+                <input type="hidden" id="item-id">
+                
+                <div>
+                    <label class="text-xs text-gray-300 block mb-1">Item Name *</label>
+                    <input type="text" id="modal-item-name" required placeholder="e.g. Hair Clip or Sugar 1kg" class="w-full glass-input px-3 py-2 rounded-xl text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-gray-300 block mb-1">Category *</label>
+                        <select id="modal-item-cat" class="w-full glass-input px-3 py-2 rounded-xl text-sm bg-gray-900">
+                            <option value="fancy">Fancy Item</option>
+                            <option value="grocery">Grocery Item</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-300 block mb-1">Price (₹) *</label>
+                        <input type="number" step="0.5" id="modal-item-price" required placeholder="50" class="w-full glass-input px-3 py-2 rounded-xl text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-300 block mb-1">Stock Quantity</label>
+                    <input type="number" id="modal-item-stock" value="100" min="0" class="w-full glass-input px-3 py-2 rounded-xl text-sm">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeItemModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:bg-white/5">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/30">Save Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: RECEIPT MODAL -->
+    <div id="receipt-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md hidden p-4 overflow-y-auto">
+        <div class="glass-card rounded-2xl max-w-sm w-full p-4 border border-white/10 shadow-2xl relative text-gray-900 bg-white">
+            <button onclick="closeReceiptModal()" class="absolute top-3 right-3 text-gray-500 hover:text-black">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <!-- RECEIPT DESIGN AREA -->
+            <div id="printable-receipt-area" class="p-4 bg-white text-gray-900 font-sans text-xs">
+                <div class="text-center border-b border-dashed border-gray-400 pb-3 mb-3">
+                    <h2 class="text-xl font-bold font-outfit tracking-wide text-gray-900 uppercase">KRUPA STORE</h2>
+                    <p class="text-[11px] text-gray-600">Retail Fancy & Grocery Store</p>
+                    <p class="text-[10px] text-gray-500 mt-0.5" id="rec-datetime">Date: --/--/----</p>
+                    <p class="text-[10px] font-mono text-gray-700 font-semibold" id="rec-bill-no">Bill #1001</p>
+
+                    <!-- Clear Payment Status Stamp -->
+                    <div class="mt-2 text-center">
+                        <span id="rec-status-stamp" class="py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block">
+                            🟢 PAID BILL
+                        </span>
+                    </div>
+                </div>
+
+                <div id="rec-customer-box" class="mb-2 text-[11px] border-b border-gray-200 pb-2 hidden">
+                    <p><span class="font-semibold">Customer:</span> <span id="rec-cust-name">-</span></p>
+                    <p><span class="font-semibold">Phone:</span> <span id="rec-cust-phone">-</span></p>
+                </div>
+
+                <!-- Receipt Items Table -->
+                <table class="w-full text-left mb-3">
+                    <thead>
+                        <tr class="border-b border-gray-300 text-[10px] text-gray-600 uppercase">
+                            <th class="py-1">Item</th>
+                            <th class="py-1 text-center">Qty</th>
+                            <th class="py-1 text-right">Price</th>
+                            <th class="py-1 text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rec-items-list" class="divide-y divide-gray-100 text-[11px]">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+
+                <div class="border-t border-dashed border-gray-400 pt-2 space-y-1 text-right">
+                    <div class="flex justify-between text-[11px]">
+                        <span>Subtotal:</span>
+                        <span>₹<span id="rec-subtotal">0</span></span>
+                    </div>
+                    <div id="rec-discount-row" class="flex justify-between text-[11px] text-red-600 hidden">
+                        <span>Discount:</span>
+                        <span>-₹<span id="rec-discount">0</span></span>
+                    </div>
+                    <div class="flex justify-between font-bold text-sm text-black border-t border-gray-300 pt-1">
+                        <span>GRAND TOTAL:</span>
+                        <span>₹<span id="rec-grandtotal">0</span></span>
+                    </div>
+                </div>
+
+                <!-- CREDIT BILL UNDENIABLE PROOF & SIGNATURE SECTION -->
+                <div id="rec-credit-proof-box" class="mt-4 pt-3 border-t-2 border-dashed border-red-500 text-[11px] text-red-950 bg-red-50 p-2.5 rounded hidden">
+                    <div class="font-extrabold text-center text-[11px] uppercase mb-1 tracking-wide text-red-700">
+                        ⚠️ OFFICIAL CREDIT (UDHAR) PROOF
+                    </div>
+                    <p class="text-[10px] leading-tight text-gray-800">
+                        I acknowledge receipt of above goods on credit amounting to 
+                        <strong class="text-red-700 font-mono text-xs">₹<span id="rec-credit-proof-amt">0</span></strong> from Krupa Store and agree to clear the balance.
+                    </p>
+                    <div class="mt-6 pt-1 border-t border-gray-400 text-center text-[10px] text-gray-600 font-medium">
+                        Customer Signature / Acknowledgement
+                    </div>
+                </div>
+
+                <div class="text-center mt-4 pt-3 border-t border-gray-200 text-[10px] text-gray-500">
+                    <p class="font-semibold text-gray-700">Thank you for shopping at Krupa Store! 🙏</p>
+                    <p class="mt-0.5">Please visit again!</p>
+                </div>
+            </div>
+
+            <!-- Receipt Actions -->
+            <div class="mt-4 pt-3 border-t border-gray-200 flex flex-col gap-2">
+                <button onclick="window.print()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i> Print Bill Now
+                </button>
+                <button onclick="shareOnWhatsApp()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-sm"></i> Share via WhatsApp
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- APPLICATION JAVASCRIPT LOGIC -->
+    <script>
+        const DEFAULT_ITEMS = [
+            { id: 1, name: 'Fancy Hair Band', category: 'fancy', price: 40, stock: 50 },
+            { id: 2, name: 'Bangles Pack', category: 'fancy', price: 120, stock: 30 },
+            { id: 3, name: 'Lipstick (Rose)', category: 'fancy', price: 150, stock: 25 },
+            { id: 4, name: 'Earrings Set', category: 'fancy', price: 90, stock: 40 },
+            { id: 5, name: 'Face Powder', category: 'fancy', price: 110, stock: 20 },
+            { id: 6, name: 'Basmati Rice 1kg', category: 'grocery', price: 85, stock: 100 },
+            { id: 7, name: 'Sunflower Oil 1L', category: 'grocery', price: 135, stock: 80 },
+            { id: 8, name: 'Sugar 1kg', category: 'grocery', price: 44, stock: 150 },
+            { id: 9, name: 'Toor Dal 1kg', category: 'grocery', price: 160, stock: 60 },
+            { id: 10, name: 'Tea Powder 250g', category: 'grocery', price: 95, stock: 75 }
+        ];
+
+        let items = JSON.parse(localStorage.getItem('krupa_items')) || DEFAULT_ITEMS;
+        let billsHistory = JSON.parse(localStorage.getItem('krupa_bills')) || [];
+        let currentCart = [];
+        let currentPosFilter = 'all';
+        let currentHistoryFilter = 'all';
+        let currentPaymentMode = 'credit';
+        let currentBillNumber = parseInt(localStorage.getItem('krupa_last_bill_no') || '1001');
+
+        let calcVal = '0';
+        let calcExp = '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Restore saved theme preference
+            const savedTheme = localStorage.getItem('krupa_theme') || 'theme-aurora';
+            changeBackgroundTheme(savedTheme);
+            document.getElementById('theme-selector').value = savedTheme;
+
+            initParticleCanvas();
+            updateClock();
+            setInterval(updateClock, 1000);
+            setPaymentMode('credit');
+            renderPosItems();
+            renderItemsTable();
+            renderHistoryTable();
+            updateHeaderStats();
+            document.getElementById('current-bill-no').innerText = `Bill #${currentBillNumber}`;
+        });
+
+        // ================= JS INTERACTIVE BACKGROUND CANVAS =================
+        let canvas, ctx, particles = [];
+        let particleColor = 'rgba(99, 102, 241, 0.4)';
+
+        function initParticleCanvas() {
+            canvas = document.getElementById('particle-canvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            createParticles();
+            animateParticles();
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function createParticles() {
+            particles = [];
+            const count = Math.floor((window.innerWidth * window.innerHeight) / 18000);
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 2 + 1,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    alpha: Math.random() * 0.5 + 0.2
+                });
+            }
+        }
+
+        function animateParticles() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = particleColor;
+                ctx.fill();
+
+                // Draw subtle connecting lines between nearby particles
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if (dist < 100) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = particleColor.replace(/[\d\.]+\)$/, `${(1 - dist / 100) * 0.15})`);
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        // Theme Change Function
+        function changeBackgroundTheme(themeClass) {
+            document.body.className = `${themeClass} antialiased min-h-screen flex flex-col`;
+            localStorage.setItem('krupa_theme', themeClass);
+
+            // Update JS particle colors according to selected theme
+            if (themeClass === 'theme-aurora') particleColor = 'rgba(99, 102, 241, 0.4)';
+            else if (themeClass === 'theme-cyber-blue') particleColor = 'rgba(14, 165, 233, 0.4)';
+            else if (themeClass === 'theme-royal-gold') particleColor = 'rgba(217, 119, 6, 0.4)';
+            else if (themeClass === 'theme-neon-sunset') particleColor = 'rgba(244, 63, 94, 0.4)';
+            else if (themeClass === 'theme-emerald-matrix') particleColor = 'rgba(16, 185, 129, 0.4)';
+            else if (themeClass === 'theme-cosmic-purple') particleColor = 'rgba(192, 38, 211, 0.4)';
+            else if (themeClass === 'theme-dark-obsidian') particleColor = 'rgba(225, 29, 72, 0.35)';
+            else if (themeClass === 'theme-light-glass') particleColor = 'rgba(99, 102, 241, 0.25)';
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('current-clock').innerText = now.toLocaleTimeString();
+        }
+
+        function switchTab(tabName) {
+            document.getElementById('tab-pos').classList.add('hidden');
+            document.getElementById('tab-items').classList.add('hidden');
+            document.getElementById('tab-history').classList.add('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition text-gray-400 hover:text-white hover:bg-white/5';
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            activeBtn.className = 'tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition bg-brand-600 text-white shadow-lg shadow-brand-600/30';
+        }
+
+        // ================= PAYMENT MODE TOGGLE =================
+        function setPaymentMode(mode) {
+            currentPaymentMode = mode;
+            const paidBtn = document.getElementById('pay-mode-paid');
+            const creditBtn = document.getElementById('pay-mode-credit');
+            const warning = document.getElementById('credit-warning-note');
+            const custInput = document.getElementById('cust-name');
+
+            if (mode === 'paid') {
+                paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-emerald-600 text-white shadow';
+                creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-red-300 hover:text-white';
+                warning.classList.add('hidden');
+                custInput.placeholder = "Customer Name (Optional)";
+            } else {
+                paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-emerald-300 hover:text-white';
+                creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-red-600 text-white shadow';
+                warning.classList.remove('hidden');
+                custInput.placeholder = "Customer Name (REQUIRED for Credit)";
+            }
+        }
+
+        // ================= CALCULATOR FUNCTIONS =================
+        function calcNum(num) {
+            if (calcVal === '0' && num !== '.') {
+                calcVal = num;
+            } else {
+                calcVal += num;
+            }
+            updateCalcDisplay();
+        }
+
+        function calcOp(op) {
+            calcExp = calcVal + ' ' + op + ' ';
+            calcVal = '0';
+            updateCalcDisplay();
+        }
+
+        function calcClear() {
+            calcVal = '0';
+            calcExp = '';
+            updateCalcDisplay();
+        }
+
+        function calcBackspace() {
+            if (calcVal.length > 1) {
+                calcVal = calcVal.slice(0, -1);
+            } else {
+                calcVal = '0';
+            }
+            updateCalcDisplay();
+        }
+
+        function calcEqual() {
+            try {
+                let fullExp = calcExp + calcVal;
+                let sanitizedExp = fullExp.replace(/×/g, '*').replace(/÷/g, '/');
+                let res = eval(sanitizedExp);
+                calcExp = fullExp + ' =';
+                calcVal = String(Math.round(res * 100) / 100);
+                updateCalcDisplay();
+            } catch (e) {
+                calcVal = 'Error';
+                updateCalcDisplay();
+            }
+        }
+
+        function updateCalcDisplay() {
+            document.getElementById('calc-display').innerText = calcVal;
+            document.getElementById('calc-expression').innerText = calcExp;
+            document.getElementById('calc-add-val').innerText = isNaN(parseFloat(calcVal)) ? '0' : calcVal;
+        }
+
+        function addCalcResultToBill() {
+            let amount = parseFloat(calcVal);
+            if (isNaN(amount) || amount <= 0) {
+                alert('Please calculate a valid amount first');
+                return;
+            }
+            addToCartDirect('Calc Quick Item', amount, 1);
+            calcClear();
+        }
+
+        // ================= POS & CART LOGIC =================
+        function setPosFilter(filter) {
+            currentPosFilter = filter;
+            document.querySelectorAll('.pos-filter-btn').forEach(btn => {
+                btn.className = 'pos-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white';
+            });
+            document.getElementById(`filter-${filter}`).className = 'pos-filter-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-medium';
+            renderPosItems();
+        }
+
+        function renderPosItems() {
+            const grid = document.getElementById('pos-items-grid');
+            const search = document.getElementById('pos-search').value.toLowerCase();
+            
+            let filtered = items.filter(item => {
+                let matchesCat = currentPosFilter === 'all' || item.category === currentPosFilter;
+                let matchesSearch = item.name.toLowerCase().includes(search) || item.price.toString().includes(search);
+                return matchesCat && matchesSearch;
+            });
+
+            grid.innerHTML = filtered.map(item => `
+                <div onclick="addItemToCart(${item.id})" class="glass-card p-3 rounded-2xl border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-900/20 cursor-pointer transition flex flex-col justify-between h-28 group">
+                    <div class="flex items-start justify-between gap-1">
+                        <span class="font-semibold text-xs text-gray-100 group-hover:text-indigo-300 line-clamp-2">${item.name}</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded ${item.category === 'fancy' ? 'bg-pink-500/20 text-pink-300' : 'bg-emerald-500/20 text-emerald-300'} font-medium capitalize">${item.category}</span>
+                    </div>
+                    <div class="flex items-end justify-between mt-2">
+                        <div class="text-sm font-bold font-mono text-emerald-400">₹${item.price}</div>
+                        <button class="w-6 h-6 rounded-lg bg-indigo-600/80 group-hover:bg-indigo-500 text-white flex items-center justify-center text-xs shadow">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addItemToCart(itemId) {
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            const existing = currentCart.find(c => c.id === item.id && !c.isCustom);
+            if (existing) {
+                existing.qty++;
+            } else {
+                currentCart.push({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    qty: 1,
+                    isCustom: false
+                });
+            }
+            renderCart();
+        }
+
+        function addToCartDirect(name, price, qty) {
+            currentCart.push({
+                id: Date.now(),
+                name: name,
+                price: price,
+                qty: qty,
+                isCustom: true
+            });
+            renderCart();
+        }
+
+        function handleQuickCustomAdd(e) {
+            e.preventDefault();
+            const name = document.getElementById('quick-item-name').value;
+            const price = parseFloat(document.getElementById('quick-item-price').value);
+            const qty = parseInt(document.getElementById('quick-item-qty').value);
+
+            if (name && price > 0 && qty > 0) {
+                addToCartDirect(name, price, qty);
+                document.getElementById('quick-item-name').value = '';
+                document.getElementById('quick-item-price').value = '';
+                document.getElementById('quick-item-qty').value = '1';
+            }
+        }
+
+        function updateCartQty(index, change) {
+            if (currentCart[index]) {
+                currentCart[index].qty += change;
+                if (currentCart[index].qty <= 0) {
+                    currentCart.splice(index, 1);
+                }
+            }
+            renderCart();
+        }
+
+        function removeCartItem(index) {
+            currentCart.splice(index, 1);
+            renderCart();
+        }
+
+        function clearBillCart() {
+            currentCart = [];
+            document.getElementById('cust-name').value = '';
+            document.getElementById('cust-phone').value = '';
+            document.getElementById('cash-given').value = '';
+            document.getElementById('bill-discount').value = '0';
+            setPaymentMode('credit');
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            if (currentCart.length === 0) {
+                container.innerHTML = `
+                    <div id="empty-cart-msg" class="py-8 text-center text-gray-500">
+                        <i class="fa-solid fa-basket-shopping text-3xl mb-2 text-gray-600 block"></i>
+                        <p class="text-xs">No items in bill yet.</p>
+                        <p class="text-[11px] text-gray-600 mt-1">Click an item or use calculator/custom input</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = currentCart.map((item, idx) => `
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-gray-900/60 border border-white/5 text-xs">
+                        <div class="flex-1 pr-2">
+                            <div class="font-medium text-gray-200 line-clamp-1">${item.name}</div>
+                            <div class="text-[11px] text-gray-400 font-mono">₹${item.price} x ${item.qty} = <span class="text-emerald-400 font-bold">₹${item.price * item.qty}</span></div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="updateCartQty(${idx}, -1)" class="w-5 h-5 rounded bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center justify-center font-bold text-xs">-</button>
+                            <span class="w-5 text-center font-mono font-bold text-xs">${item.qty}</span>
+                            <button onclick="updateCartQty(${idx}, 1)" class="w-5 h-5 rounded bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center justify-center font-bold text-xs">+</button>
+                            <button onclick="removeCartItem(${idx})" class="w-5 h-5 rounded text-red-400 hover:bg-red-500/20 flex items-center justify-center ml-1"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            updateBillTotals();
+        }
+
+        function updateBillTotals() {
+            let subtotal = currentCart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            let discount = parseFloat(document.getElementById('bill-discount').value) || 0;
+            let grandTotal = Math.max(0, subtotal - discount);
+
+            document.getElementById('bill-subtotal').innerText = subtotal;
+            document.getElementById('bill-grand-total').innerText = grandTotal;
+            calculateChange();
+        }
+
+        function calculateChange() {
+            let grandTotal = parseFloat(document.getElementById('bill-grand-total').innerText) || 0;
+            let cashGiven = parseFloat(document.getElementById('cash-given').value) || 0;
+            let change = cashGiven > grandTotal ? cashGiven - grandTotal : 0;
+            document.getElementById('cash-change').innerText = `₹${change}`;
+        }
+
+        // CHECKOUT & BILL GENERATION
+        function checkoutBill(showReceiptModal) {
+            if (currentCart.length === 0) {
+                alert('Please add items to bill before saving');
+                return;
+            }
+
+            let custName = document.getElementById('cust-name').value.trim();
+            let custPhone = document.getElementById('cust-phone').value.trim();
+
+            if (currentPaymentMode === 'credit' && !custName) {
+                alert('⚠️ Customer Name is required for Credit (Udhar) Bills as proof!');
+                document.getElementById('cust-name').focus();
+                return;
+            }
+
+            if (!custName) custName = 'Walk-in Customer';
+
+            let subtotal = parseFloat(document.getElementById('bill-subtotal').innerText);
+            let discount = parseFloat(document.getElementById('bill-discount').value) || 0;
+            let grandTotal = parseFloat(document.getElementById('bill-grand-total').innerText);
+
+            const billData = {
+                billNo: currentBillNumber,
+                date: new Date().toLocaleString(),
+                customerName: custName,
+                customerPhone: custPhone,
+                items: [...currentCart],
+                subtotal: subtotal,
+                discount: discount,
+                grandTotal: grandTotal,
+                paymentStatus: currentPaymentMode // 'paid' or 'credit'
+            };
+
+            billsHistory.unshift(billData);
+            localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+            
+            currentBillNumber++;
+            localStorage.setItem('krupa_last_bill_no', currentBillNumber.toString());
+            document.getElementById('current-bill-no').innerText = `Bill #${currentBillNumber}`;
+
+            updateHeaderStats();
+            renderHistoryTable();
+
+            if (showReceiptModal) {
+                openReceiptModal(billData);
+            } else {
+                alert(`Bill #${billData.billNo} saved successfully as ${currentPaymentMode.toUpperCase()}! Total: ₹${grandTotal}`);
+            }
+
+            clearBillCart();
+        }
+
+        // ================= RECEIPT MODAL & WHATSAPP =================
+        function openReceiptModal(bill) {
+            document.getElementById('rec-bill-no').innerText = `Bill #${bill.billNo}`;
+            document.getElementById('rec-datetime').innerText = `Date: ${bill.date}`;
+
+            let isCredit = (bill.paymentStatus === 'credit');
+            const stamp = document.getElementById('rec-status-stamp');
+            const proofBox = document.getElementById('rec-credit-proof-box');
+
+            if (isCredit) {
+                stamp.className = 'py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block bg-red-100 text-red-700 border-red-400';
+                stamp.innerText = '🔴 CREDIT BILL / UNPAID (KHATA)';
+                proofBox.classList.remove('hidden');
+                document.getElementById('rec-credit-proof-amt').innerText = bill.grandTotal;
+            } else {
+                stamp.className = 'py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block bg-emerald-100 text-emerald-700 border-emerald-400';
+                stamp.innerText = '🟢 PAID BILL (CASH/ONLINE)';
+                proofBox.classList.add('hidden');
+            }
+
+            if (bill.customerName !== 'Walk-in Customer' || bill.customerPhone) {
+                document.getElementById('rec-customer-box').classList.remove('hidden');
+                document.getElementById('rec-cust-name').innerText = bill.customerName;
+                document.getElementById('rec-cust-phone').innerText = bill.customerPhone || 'N/A';
+            } else {
+                document.getElementById('rec-customer-box').classList.add('hidden');
+            }
+
+            document.getElementById('rec-items-list').innerHTML = bill.items.map(item => `
+                <tr>
+                    <td class="py-1 font-medium">${item.name}</td>
+                    <td class="py-1 text-center font-mono">${item.qty}</td>
+                    <td class="py-1 text-right font-mono">₹${item.price}</td>
+                    <td class="py-1 text-right font-mono font-bold">₹${item.price * item.qty}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('rec-subtotal').innerText = bill.subtotal;
+            if (bill.discount > 0) {
+                document.getElementById('rec-discount-row').classList.remove('hidden');
+                document.getElementById('rec-discount').innerText = bill.discount;
+            } else {
+                document.getElementById('rec-discount-row').classList.add('hidden');
+            }
+            document.getElementById('rec-grandtotal').innerText = bill.grandTotal;
+
+            document.getElementById('receipt-modal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+        }
+
+        function shareOnWhatsApp() {
+            let billNo = document.getElementById('rec-bill-no').innerText;
+            let total = document.getElementById('rec-grandtotal').innerText;
+            let phone = document.getElementById('rec-cust-phone').innerText;
+            let statusText = document.getElementById('rec-status-stamp').innerText;
+            
+            let text = `*KRUPA STORE BILL SUMMARY*%0A${billNo}%0AStatus: ${statusText}%0ATotal Amount: ₹${total}%0AThank you for shopping with us!`;
+            let cleanPhone = phone.replace(/[^0-9]/g, '');
+            let url = cleanPhone ? `https://wa.me/91${cleanPhone}?text=${text}` : `https://wa.me/?text=${text}`;
+            window.open(url, '_blank');
+        }
+
+        // ================= ITEM MANAGEMENT MODAL =================
+        function renderItemsTable() {
+            const tbody = document.getElementById('items-table-body');
+            tbody.innerHTML = items.map(item => `
+                <tr class="hover:bg-white/5 transition">
+                    <td class="px-4 py-3 font-semibold text-white">${item.name}</td>
+                    <td class="px-4 py-3">
+                        <span class="text-xs px-2 py-0.5 rounded ${item.category === 'fancy' ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'} font-medium capitalize">
+                            ${item.category}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-right font-mono font-bold text-emerald-400">₹${item.price}</td>
+                    <td class="px-4 py-3 text-center font-mono">${item.stock}</td>
+                    <td class="px-4 py-3 text-right space-x-2">
+                        <button onclick="openEditItemModal(${item.id})" class="text-indigo-400 hover:text-indigo-300"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteItem(${item.id})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+            document.getElementById('items-count-badge').innerText = items.length;
+        }
+
+        function openAddItemModal() {
+            document.getElementById('item-id').value = '';
+            document.getElementById('modal-title').innerText = 'Add New Item';
+            document.getElementById('modal-item-name').value = '';
+            document.getElementById('modal-item-cat').value = 'fancy';
+            document.getElementById('modal-item-price').value = '';
+            document.getElementById('modal-item-stock').value = '100';
+            document.getElementById('item-modal').classList.remove('hidden');
+        }
+
+        function openEditItemModal(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+            document.getElementById('item-id').value = item.id;
+            document.getElementById('modal-title').innerText = 'Edit Item';
+            document.getElementById('modal-item-name').value = item.name;
+            document.getElementById('modal-item-cat').value = item.category;
+            document.getElementById('modal-item-price').value = item.price;
+            document.getElementById('modal-item-stock').value = item.stock;
+            document.getElementById('item-modal').classList.remove('hidden');
+        }
+
+        function closeItemModal() {
+            document.getElementById('item-modal').classList.add('hidden');
+        }
+
+        function handleSaveItem(e) {
+            e.preventDefault();
+            const id = document.getElementById('item-id').value;
+            const name = document.getElementById('modal-item-name').value;
+            const cat = document.getElementById('modal-item-cat').value;
+            const price = parseFloat(document.getElementById('modal-item-price').value);
+            const stock = parseInt(document.getElementById('modal-item-stock').value) || 0;
+
+            if (id) {
+                let idx = items.findIndex(i => i.id == id);
+                if (idx !== -1) {
+                    items[idx] = { id: parseInt(id), name, category: cat, price, stock };
+                }
+            } else {
+                items.push({ id: Date.now(), name, category: cat, price, stock });
+            }
+
+            localStorage.setItem('krupa_items', JSON.stringify(items));
+            renderItemsTable();
+            renderPosItems();
+            closeItemModal();
+        }
+
+        function deleteItem(id) {
+            if (confirm('Are you sure you want to delete this item?')) {
+                items = items.filter(i => i.id !== id);
+                localStorage.setItem('krupa_items', JSON.stringify(items));
+                renderItemsTable();
+                renderPosItems();
+            }
+        }
+
+        // ================= HISTORY TABLE & UDHAR MANAGEMENT =================
+        function filterHistory(status) {
+            currentHistoryFilter = status;
+            document.querySelectorAll('.hist-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'bg-emerald-600', 'bg-red-600', 'text-white', 'shadow');
+                btn.classList.add('text-gray-400');
+            });
+
+            const activeBtn = document.getElementById(`hist-filter-${status}`);
+            if (status === 'all') {
+                activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow';
+            } else if (status === 'paid') {
+                activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow';
+            } else if (status === 'credit') {
+                activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-600 text-white shadow';
+            }
+            renderHistoryTable();
+        }
+
+        function markBillAsPaid(billNo) {
+            const bill = billsHistory.find(b => b.billNo === billNo);
+            if (!bill) return;
+
+            if (confirm(`Are you sure you want to mark Bill #${billNo} for ${bill.customerName} (₹${bill.grandTotal}) as PAID?`)) {
+                bill.paymentStatus = 'paid';
+                localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+                renderHistoryTable();
+                updateHeaderStats();
+                alert(`Bill #${billNo} has been updated to PAID!`);
+            }
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-table-body');
+            
+            let totalSales = 0;
+            let totalPaid = 0;
+            let totalCredit = 0;
+            let countAll = billsHistory.length;
+            let countPaid = 0;
+            let countCredit = 0;
+
+            billsHistory.forEach(b => {
+                let status = b.paymentStatus || 'paid';
+                totalSales += b.grandTotal;
+                if (status === 'credit') {
+                    totalCredit += b.grandTotal;
+                    countCredit++;
+                } else {
+                    totalPaid += b.grandTotal;
+                    countPaid++;
+                }
+            });
+
+            document.getElementById('history-total-sales').innerText = `₹${totalSales}`;
+            document.getElementById('history-paid-sales').innerText = `₹${totalPaid}`;
+            document.getElementById('history-credit-sales').innerText = `₹${totalCredit}`;
+
+            document.getElementById('hist-count-all').innerText = countAll;
+            document.getElementById('hist-count-paid').innerText = countPaid;
+            document.getElementById('hist-count-credit').innerText = countCredit;
+
+            let filtered = billsHistory.filter(b => {
+                let status = b.paymentStatus || 'paid';
+                if (currentHistoryFilter === 'all') return true;
+                return status === currentHistoryFilter;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-500">No ${currentHistoryFilter} bills found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(b => {
+                let isCredit = (b.paymentStatus === 'credit');
+                let statusBadge = isCredit 
+                    ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-500/20 text-red-300 border border-red-500/30 inline-flex items-center gap-1"><i class="fa-solid fa-clock"></i> CREDIT (UDHAR)</span>`
+                    : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 inline-flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> PAID</span>`;
+
+                return `
+                    <tr class="hover:bg-white/5 transition">
+                        <td class="px-4 py-3 font-mono font-bold text-indigo-300">#${b.billNo}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400">${b.date}</td>
+                        <td class="px-4 py-3 font-medium text-white">
+                            ${b.customerName}
+                            ${b.customerPhone ? `<div class="text-[10px] text-gray-400 font-mono"><i class="fa-solid fa-phone text-[9px] mr-1"></i>${b.customerPhone}</div>` : ''}
+                        </td>
+                        <td class="px-4 py-3 text-center">${statusBadge}</td>
+                        <td class="px-4 py-3 text-center font-mono">${b.items.length} items</td>
+                        <td class="px-4 py-3 text-right font-mono font-bold ${isCredit ? 'text-red-400' : 'text-emerald-400'}">₹${b.grandTotal}</td>
+                        <td class="px-4 py-3 text-right space-x-1.5">
+                            ${isCredit ? `
+                                <button onclick="markBillAsPaid(${b.billNo})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow transition">
+                                    <i class="fa-solid fa-check mr-1"></i> Mark Paid
+                                </button>
+                            ` : ''}
+                            <button onclick='openReceiptModal(${JSON.stringify(b)})' class="px-2.5 py-1 bg-indigo-600/60 hover:bg-indigo-500 text-white text-xs rounded-lg transition">
+                                <i class="fa-solid fa-eye mr-1"></i> Proof Receipt
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateHeaderStats() {
+            let todaySales = billsHistory.reduce((sum, b) => sum + b.grandTotal, 0);
+            document.getElementById('header-today-sales').innerText = `₹${todaySales}`;
+        }
+    </script>
+</body>
+</html>
