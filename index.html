@@ -391,35 +391,55 @@
                             </tr>
                         </thead>
                         <tbody id="history-table-body" class="divide-y divide-white/5">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- TAB 4: STORE SETTINGS -->
         <div id="tab-settings" class="tab-content hidden space-y-6 animate-pop-in">
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="text-2xl font-bold font-outfit text-white">Store Settings & System Preferences</h2>
-                    <p class="text-xs text-gray-400">Customize store profile, billing defaults, and manage system backups</p>
+                    <p class="text-xs text-gray-400">Customize store profile, billing defaults, and manage system themes</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Appearance & Theme Settings Card -->
+                <!-- Appearance & Theme Mode Card with Live Previews -->
                 <div class="glass-card rounded-2xl p-6 border border-white/10 space-y-4 col-span-1 lg:col-span-2">
                     <div class="flex items-center gap-2 pb-3 border-b border-white/10 text-indigo-500">
                         <i class="fa-solid fa-palette text-lg"></i>
-                        <h3 class="font-bold text-white text-base">Appearance & Theme Mode</h3>
+                        <h3 class="font-bold text-white text-base">Appearance & Theme Mode Options</h3>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
-                        <div>
-                            <p class="font-semibold text-white text-sm">Choose System Theme</p>
-                            <p class="text-gray-400 mt-0.5">Select your preferred POS viewing experience</p>
+                    <p class="text-xs text-gray-400">Select your preferred viewing theme for the POS interface:</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        <!-- Light Mode Preview Card -->
+                        <div onclick="setThemeMode('light')" id="theme-card-light" class="cursor-pointer p-4 rounded-xl border-2 border-indigo-500 bg-white text-slate-900 shadow-md transition hover:scale-[1.01] flex flex-col justify-between gap-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2 font-bold text-sm text-slate-900">
+                                    <i class="fa-solid fa-sun text-amber-500 text-base"></i>
+                                    <span>Clean Light Mode (White)</span>
+                                </div>
+                                <span id="badge-theme-light" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-600 text-white">ACTIVE</span>
+                            </div>
+                            <p class="text-xs text-slate-500">High contrast pure white background with clean black slate typography for bright environments.</p>
                         </div>
-                        <div class="flex items-center gap-3 bg-gray-900/60 p-1.5 rounded-xl border border-white/10">
-                            <button onclick="setThemeMode('light')" id="theme-btn-light" class="px-4 py-2 rounded-lg font-semibold text-xs transition flex items-center gap-2 bg-indigo-600 text-white shadow">
-                                <i class="fa-solid fa-sun text-amber-400"></i> Light Mode (White)
-                            </button>
-                            <button onclick="setThemeMode('dark')" id="theme-btn-dark" class="px-4 py-2 rounded-lg font-semibold text-xs transition flex items-center gap-2 text-gray-400 hover:text-white">
-                                <i class="fa-solid fa-moon text-indigo-400"></i> Dark Mode (Night)
-                            </button>
+
+                        <!-- Dark Mode Preview Card -->
+                        <div onclick="setThemeMode('dark')" id="theme-card-dark" class="cursor-pointer p-4 rounded-xl border-2 border-slate-700 bg-slate-900 text-white shadow-md transition hover:scale-[1.01] flex flex-col justify-between gap-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2 font-bold text-sm text-white">
+                                    <i class="fa-solid fa-moon text-indigo-400 text-base"></i>
+                                    <span>Sleek Dark Mode (Night)</span>
+                                </div>
+                                <span id="badge-theme-dark" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 hidden">SELECT</span>
+                            </div>
+                            <p class="text-xs text-slate-400">Low glare dark navy background with smooth glowing accents for nighttime or dark store counters.</p>
                         </div>
                     </div>
                 </div>

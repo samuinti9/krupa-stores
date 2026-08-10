@@ -60,16 +60,22 @@ function setThemeMode(mode) {
     document.body.className = `theme-${mode} antialiased min-h-screen flex flex-col`;
     localStorage.setItem('krupa_theme_mode', mode);
 
-    const lightBtn = document.getElementById('theme-btn-light');
-    const darkBtn = document.getElementById('theme-btn-dark');
+    const cardLight = document.getElementById('theme-card-light');
+    const cardDark = document.getElementById('theme-card-dark');
+    const badgeLight = document.getElementById('badge-theme-light');
+    const badgeDark = document.getElementById('badge-theme-dark');
 
-    if (lightBtn && darkBtn) {
+    if (cardLight && cardDark) {
         if (mode === 'light') {
-            lightBtn.className = 'px-4 py-2 rounded-lg font-semibold text-xs transition flex items-center gap-2 bg-indigo-600 text-white shadow';
-            darkBtn.className = 'px-4 py-2 rounded-lg font-semibold text-xs transition flex items-center gap-2 text-gray-400 hover:text-white';
+            cardLight.className = 'cursor-pointer p-4 rounded-xl border-2 border-indigo-600 bg-white text-slate-900 shadow-lg transition hover:scale-[1.01] flex flex-col justify-between gap-3';
+            cardDark.className = 'cursor-pointer p-4 rounded-xl border-2 border-slate-700 bg-slate-900 text-white shadow-md transition hover:scale-[1.01] flex flex-col justify-between gap-3 opacity-70';
+            if (badgeLight) { badgeLight.innerText = 'ACTIVE'; badgeLight.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-600 text-white block'; }
+            if (badgeDark) { badgeDark.innerText = 'SELECT'; badgeDark.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 block'; }
         } else {
-            darkBtn.className = 'px-4 py-2 rounded-lg font-semibold text-xs transition flex items-center gap-2 bg-indigo-600 text-white shadow';
-            lightBtn.className = 'px-4 py-2 rounded-lg font-semibold text-xs transition flex items-center gap-2 text-gray-400 hover:text-white';
+            cardDark.className = 'cursor-pointer p-4 rounded-xl border-2 border-indigo-500 bg-slate-900 text-white shadow-lg transition hover:scale-[1.01] flex flex-col justify-between gap-3';
+            cardLight.className = 'cursor-pointer p-4 rounded-xl border-2 border-slate-300 bg-white text-slate-900 shadow-md transition hover:scale-[1.01] flex flex-col justify-between gap-3 opacity-70';
+            if (badgeDark) { badgeDark.innerText = 'ACTIVE'; badgeDark.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500 text-white block'; }
+            if (badgeLight) { badgeLight.innerText = 'SELECT'; badgeLight.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600 block'; }
         }
     }
 }
