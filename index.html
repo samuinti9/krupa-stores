@@ -222,18 +222,56 @@
             100% { transform: scale(0.9) translate(20px, -20px); }
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.7); }
+        /* CSS MICRO-ANIMATIONS SYSTEM */
+        @keyframes cardPopIn {
+            0% { transform: scale(0.92) translateY(8px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        @keyframes rowSlideIn {
+            0% { transform: translateX(-12px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes modalSpring {
+            0% { transform: scale(0.85) translateY(20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        @keyframes shimmerSweeper {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.4); }
+            100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.8); }
+        }
+
+        .animate-pop-in { animation: cardPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .animate-row-slide { animation: rowSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-modal-spring { animation: modalSpring 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        .btn-shimmer {
+            background-size: 200% 100%;
+            background-image: linear-gradient(110deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 100%);
+            animation: shimmerSweeper 3s infinite linear;
+        }
 
         .calc-btn {
-            transition: all 0.15s ease;
+            transition: transform 0.12s ease, background-color 0.15s ease, box-shadow 0.15s ease;
             -webkit-user-select: none;
             user-select: none;
         }
-        .calc-btn:active { transform: scale(0.92); }
+        .calc-btn:hover { transform: translateY(-1px); }
+        .calc-btn:active { transform: scale(0.93) translateY(1px); }
+
+        .pos-item-card {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .pos-item-card:hover {
+            transform: translateY(-3px) scale(1.02);
+        }
     </style>
 </head>
 <body class="theme-aurora antialiased min-h-screen flex flex-col">
@@ -820,18 +858,29 @@
             canvas.height = window.innerHeight;
         }
 
-        function createParticles() {
-            particles = [];
-            const count = Math.floor((window.innerWidth * window.innerHeight) / 18000);
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    radius: Math.random() * 2 + 1,
-                    vx: (Math.random() - 0.5) * 0.4,
-                    vy: (Math.random() - 0.5) * 0.4,
-                    alpha: Math.random() * 0.5 + 0.2
-                });
+        // Celebration Confetti Sparkle Animation on Checkout
+        function triggerCheckoutCelebration() {
+            const container = document.body;
+            const colors = ['#6366f1', '#10b981', '#ec4899', '#f59e0b', '#3b82f6'];
+            for (let i = 0; i < 35; i++) {
+                const spark = document.createElement('div');
+                spark.className = 'fixed pointer-events-none z-50 rounded-full animate-pop-in';
+                const size = Math.random() * 8 + 4;
+                spark.style.width = `${size}px`;
+                spark.style.height = `${size}px`;
+                spark.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                spark.style.left = `${Math.random() * 80 + 10}vw`;
+                spark.style.top = `${Math.random() * 40 + 20}vh`;
+                spark.style.boxShadow = `0 0 10px ${spark.style.backgroundColor}`;
+                spark.style.transition = 'all 0.8s ease-out';
+                container.appendChild(spark);
+
+                setTimeout(() => {
+                    spark.style.transform = `translate(${(Math.random() - 0.5) * 200}px, ${(Math.random() - 0.5) * 200 + 150}px) scale(0)`;
+                    spark.style.opacity = '0';
+                }, 50);
+
+                setTimeout(() => spark.remove(), 850);
             }
         }
 
@@ -1194,6 +1243,7 @@
 
         // ================= RECEIPT MODAL & WHATSAPP =================
         function openReceiptModal(bill) {
+            triggerCheckoutCelebration();
             document.getElementById('rec-bill-no').innerText = `Bill #${bill.billNo}`;
             document.getElementById('rec-datetime').innerText = `Date: ${bill.date}`;
 
