@@ -90,6 +90,10 @@
                 <i class="fa-solid fa-receipt"></i>
                 <span>Bill History</span>
             </button>
+            <button onclick="switchTab('customers')" id="tab-btn-customers" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition text-slate-300 hover:text-white hover:bg-slate-800">
+                <i class="fa-solid fa-book-bookmark text-red-400"></i>
+                <span>Credit Customers (Udhar) (<span id="credit-cust-count-badge">0</span>)</span>
+            </button>
             <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition text-slate-300 hover:text-white hover:bg-slate-800">
                 <i class="fa-solid fa-gear"></i>
                 <span>Store Settings</span>
@@ -339,31 +343,36 @@
         </div>
 
         <!-- SECTION 3: BILL HISTORY TAB -->
-        <div id="tab-history" class="hidden space-y-6">
+        <div id="tab-history" class="tab-content hidden space-y-6">
             <div class="glass-card rounded-2xl p-4 border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 class="text-xl font-bold font-outfit text-white">Bill History & Udhar Register</h2>
-                    <p class="text-xs text-gray-400">View past bills, manage credit transactions & mark paid debts</p>
+                    <h2 class="text-xl font-bold font-outfit text-white">Bill History & Sales Reports</h2>
+                    <p class="text-xs text-gray-400">Filter sales by date/time, view receipts, and analyze weekly/monthly performance</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
-                    <div class="text-right bg-emerald-950/60 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
-                        <div class="text-[10px] uppercase font-bold text-emerald-400 tracking-wide">Paid Received</div>
-                        <div class="text-lg font-bold font-mono text-emerald-300" id="history-paid-sales">₹0</div>
+                    <div class="text-right bg-slate-900/60 border border-white/10 px-3 py-1.5 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Today's Sales</div>
+                        <div class="text-lg font-bold font-mono text-indigo-400" id="hist-stat-today">₹0</div>
                     </div>
-                    <div class="text-right bg-red-950/60 border border-red-500/30 px-3 py-1.5 rounded-xl">
-                        <div class="text-[10px] uppercase font-bold text-red-400 tracking-wide">Pending Credit (Udhar)</div>
-                        <div class="text-lg font-bold font-mono text-red-300" id="history-credit-sales">₹0</div>
+                    <div class="text-right bg-slate-900/60 border border-white/10 px-3 py-1.5 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">This Week</div>
+                        <div class="text-lg font-bold font-mono text-indigo-300" id="hist-stat-week">₹0</div>
+                    </div>
+                    <div class="text-right bg-slate-900/60 border border-white/10 px-3 py-1.5 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">This Month</div>
+                        <div class="text-lg font-bold font-mono text-emerald-400" id="hist-stat-month">₹0</div>
                     </div>
                     <div class="text-right bg-indigo-950/60 border border-indigo-500/30 px-3 py-1.5 rounded-xl">
-                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Total Sales</div>
+                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Total All Time</div>
                         <div class="text-lg font-bold font-mono text-indigo-300" id="history-total-sales">₹0</div>
                     </div>
                 </div>
             </div>
 
-            <!-- History Filter Tabs -->
-            <div class="flex items-center justify-between gap-2 bg-gray-900/60 p-2 rounded-2xl border border-white/10 flex-wrap">
-                <div class="flex items-center gap-2">
+            <!-- History Filter Controls: Status + Date Range Filter -->
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-gray-900/60 p-3 rounded-2xl border border-white/10">
+                <!-- Payment Status Buttons -->
+                <div class="flex items-center gap-2 flex-wrap">
                     <button onclick="filterHistory('all')" id="hist-filter-all" class="hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow">
                         All Bills (<span id="hist-count-all">0</span>)
                     </button>
@@ -373,6 +382,21 @@
                     <button onclick="filterHistory('credit')" id="hist-filter-credit" class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10">
                         🔴 Credit (Udhar) Bills (<span id="hist-count-credit">0</span>)
                     </button>
+                </div>
+
+                <!-- Date Period Filters -->
+                <div class="flex items-center gap-2 flex-wrap text-xs">
+                    <span class="text-gray-400 font-medium mr-1"><i class="fa-regular fa-calendar text-indigo-400 mr-1"></i>Period:</span>
+                    <button onclick="setDatePeriodFilter('all')" id="date-btn-all" class="date-filter-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold shadow">All Time</button>
+                    <button onclick="setDatePeriodFilter('today')" id="date-btn-today" class="date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white">Today</button>
+                    <button onclick="setDatePeriodFilter('week')" id="date-btn-week" class="date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white">This Week</button>
+                    <button onclick="setDatePeriodFilter('month')" id="date-btn-month" class="date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white">This Month</button>
+
+                    <!-- Custom Single Date Picker -->
+                    <div class="flex items-center gap-1.5 ml-2 border-l border-white/10 pl-3">
+                        <label class="text-[11px] text-gray-400 font-medium">Specific Date:</label>
+                        <input type="date" id="hist-custom-date" onchange="handleCustomDateChange(this.value)" class="glass-input px-2.5 py-1 rounded-lg text-xs font-mono text-gray-200">
+                    </div>
                 </div>
             </div>
 
@@ -391,6 +415,59 @@
                             </tr>
                         </thead>
                         <tbody id="history-table-body" class="divide-y divide-white/5">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: SEPARATE DEDICATED CREDIT CUSTOMERS (UDHAR KHATA) TAB -->
+        <div id="tab-customers" class="tab-content hidden space-y-6">
+            <div class="glass-card rounded-2xl p-6 border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-book-bookmark text-red-500 text-xl"></i>
+                        <h2 class="text-xl font-bold font-outfit text-white">Credit Customers Directory (Udhar Khata)</h2>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Dedicated customer ledger tracking outstanding credit balances & quick settlements</p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="text-right bg-red-950/70 border border-red-500/40 px-4 py-2 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-red-400 tracking-wide">Total Pending Udhar</div>
+                        <div class="text-xl font-extrabold font-mono text-red-300" id="total-udhar-balance">₹0</div>
+                    </div>
+                    <div class="text-right bg-slate-900/70 border border-white/10 px-4 py-2 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Credit Accounts</div>
+                        <div class="text-xl font-extrabold font-mono text-white" id="total-udhar-customers">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Search Filter -->
+            <div class="flex justify-between items-center bg-gray-900/60 p-3 rounded-2xl border border-white/10">
+                <div class="relative max-w-sm w-full">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                    <input type="text" id="credit-cust-search" oninput="renderCreditCustomersTable()" title="Search customer name or phone" placeholder="Search customer name or phone..." class="w-full glass-input pl-8 pr-3 py-1.5 rounded-xl text-xs">
+                </div>
+            </div>
+
+            <!-- Credit Customers Directory Table -->
+            <div class="glass-card rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-gray-900/80 text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
+                            <tr>
+                                <th class="px-4 py-3">Customer Name</th>
+                                <th class="px-4 py-3">Phone Number</th>
+                                <th class="px-4 py-3 text-center">Unpaid Bills</th>
+                                <th class="px-4 py-3 text-right">Outstanding Balance (₹)</th>
+                                <th class="px-4 py-3 text-center">Last Purchase</th>
+                                <th class="px-4 py-3 text-right">Ledger Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="credit-customers-table-body" class="divide-y divide-white/5">
                             <!-- Populated dynamically -->
                         </tbody>
                     </table>

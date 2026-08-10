@@ -97,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPosItems();
     renderItemsTable();
     renderHistoryTable();
+    renderCreditCustomersTable();
     updateHeaderStats();
     document.getElementById('current-bill-no').innerText = `Bill #${currentBillNumber}`;
 });
@@ -342,20 +343,23 @@ function updateClock() {
 }
 
 function switchTab(tabName) {
-    document.getElementById('tab-pos').classList.add('hidden');
-    document.getElementById('tab-items').classList.add('hidden');
-    document.getElementById('tab-history').classList.add('hidden');
-    const settingsTab = document.getElementById('tab-settings');
-    if (settingsTab) settingsTab.classList.add('hidden');
-
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.className = 'tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition text-gray-400 hover:text-white hover:bg-white/5';
+        btn.className = 'tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition text-slate-300 hover:text-white hover:bg-slate-800';
     });
 
-    document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+    const targetTab = document.getElementById(`tab-${tabName}`);
+    if (targetTab) targetTab.classList.remove('hidden');
+
     const activeBtn = document.getElementById(`tab-btn-${tabName}`);
     if (activeBtn) {
-        activeBtn.className = 'tab-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition bg-brand-600 text-white shadow-lg shadow-brand-600/30';
+        activeBtn.className = 'tab-btn px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition bg-indigo-600 text-white shadow';
+    }
+
+    if (tabName === 'history') {
+        renderHistoryTable();
+    } else if (tabName === 'customers') {
+        renderCreditCustomersTable();
     }
 }
 
@@ -785,7 +789,40 @@ function deleteItem(id) {
     }
 }
 
-// ================= HISTORY TABLE & UDHAR MANAGEMENT =================
+// ================= HISTORY TABLE & DATE FILTERING =================
+let currentDatePeriod = 'all';
+let currentCustomDateStr = null;
+
+function setDatePeriodFilter(period) {
+    currentDatePeriod = period;
+    currentCustomDateStr = null;
+    const dateInput = document.getElementById('hist-custom-date');
+    if (dateInput) dateInput.value = '';
+
+    document.querySelectorAll('.date-filter-btn').forEach(btn => {
+        btn.className = 'date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white';
+    });
+
+    const activeBtn = document.getElementById(`date-btn-${period}`);
+    if (activeBtn) {
+        activeBtn.className = 'date-filter-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold shadow';
+    }
+
+    renderHistoryTable();
+}
+
+function handleCustomDateChange(dateStr) {
+    if (!dateStr) return;
+    currentDatePeriod = 'custom';
+    currentCustomDateStr = dateStr;
+
+    document.querySelectorAll('.date-filter-btn').forEach(btn => {
+        btn.className = 'date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white';
+    });
+
+    renderHistoryTable();
+}
+
 function filterHistory(status) {
     currentHistoryFilter = status;
     document.querySelectorAll('.hist-filter-btn').forEach(btn => {
@@ -812,6 +849,7 @@ function markBillAsPaid(billNo) {
         bill.paymentStatus = 'paid';
         localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
         renderHistoryTable();
+        renderCreditCustomersTable();
         updateHeaderStats();
         showToastNotification(`Bill #${billNo} updated to PAID!`, 'success');
     }
@@ -821,28 +859,56 @@ function renderHistoryTable() {
     const tbody = document.getElementById('history-table-body');
     if (!tbody) return;
     
-    let totalSales = 0;
-    let totalPaid = 0;
-    let totalCredit = 0;
+    const now = new Date();
+    const todayStr = now.toLocaleDateString();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const sevenDaysAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+
+    let totalAllTime = 0;
+    let todaySales = 0;
+    let weekSales = 0;
+    let monthSales = 0;
+
     let countAll = billsHistory.length;
     let countPaid = 0;
     let countCredit = 0;
 
     billsHistory.forEach(b => {
         let status = b.paymentStatus || 'paid';
-        totalSales += b.grandTotal;
+        totalAllTime += b.grandTotal;
+
         if (status === 'credit') {
-            totalCredit += b.grandTotal;
             countCredit++;
         } else {
-            totalPaid += b.grandTotal;
             countPaid++;
+        }
+
+        const bDate = new Date(b.date);
+        const bTime = isNaN(bDate.getTime()) ? now.getTime() : bDate.getTime();
+
+        if (bTime >= (now.getTime() - 24 * 3600 * 1000) || b.date.includes(todayStr)) {
+            todaySales += b.grandTotal;
+        }
+
+        if (bTime >= sevenDaysAgo) {
+            weekSales += b.grandTotal;
+        }
+
+        if (!isNaN(bDate.getTime()) && bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear) {
+            monthSales += b.grandTotal;
         }
     });
 
-    document.getElementById('history-total-sales').innerText = `₹${totalSales}`;
-    document.getElementById('history-paid-sales').innerText = `₹${totalPaid}`;
-    document.getElementById('history-credit-sales').innerText = `₹${totalCredit}`;
+    const statToday = document.getElementById('hist-stat-today');
+    const statWeek = document.getElementById('hist-stat-week');
+    const statMonth = document.getElementById('hist-stat-month');
+    const statTotal = document.getElementById('history-total-sales');
+
+    if (statToday) statToday.innerText = `₹${todaySales}`;
+    if (statWeek) statWeek.innerText = `₹${weekSales}`;
+    if (statMonth) statMonth.innerText = `₹${monthSales}`;
+    if (statTotal) statTotal.innerText = `₹${totalAllTime}`;
 
     document.getElementById('hist-count-all').innerText = countAll;
     document.getElementById('hist-count-paid').innerText = countPaid;
@@ -850,12 +916,30 @@ function renderHistoryTable() {
 
     let filtered = billsHistory.filter(b => {
         let status = b.paymentStatus || 'paid';
-        if (currentHistoryFilter === 'all') return true;
-        return status === currentHistoryFilter;
+        if (currentHistoryFilter !== 'all' && status !== currentHistoryFilter) {
+            return false;
+        }
+
+        const bDate = new Date(b.date);
+        const bTime = isNaN(bDate.getTime()) ? now.getTime() : bDate.getTime();
+
+        if (currentDatePeriod === 'today') {
+            return (bTime >= (now.getTime() - 24 * 3600 * 1000) || b.date.includes(todayStr));
+        } else if (currentDatePeriod === 'week') {
+            return bTime >= sevenDaysAgo;
+        } else if (currentDatePeriod === 'month') {
+            return (!isNaN(bDate.getTime()) && bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear);
+        } else if (currentDatePeriod === 'custom' && currentCustomDateStr) {
+            const customDateObj = new Date(currentCustomDateStr);
+            const customStr = customDateObj.toLocaleDateString();
+            return b.date.includes(customStr) || b.date.includes(currentCustomDateStr);
+        }
+
+        return true;
     });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-500">No ${currentHistoryFilter} bills found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-500 font-medium">No bills found matching selected date & status filter.</td></tr>`;
         return;
     }
 
@@ -889,6 +973,103 @@ function renderHistoryTable() {
             </tr>
         `;
     }).join('');
+}
+
+// ================= SEPARATE CREDIT CUSTOMERS (UDHAR KHATA) DIRECTORY =================
+function renderCreditCustomersTable() {
+    const tbody = document.getElementById('credit-customers-table-body');
+    if (!tbody) return;
+
+    const searchTerm = (document.getElementById('credit-cust-search')?.value || '').toLowerCase().trim();
+
+    // Group credit bills by customer name/phone
+    const creditMap = {};
+    let grandUdharTotal = 0;
+
+    billsHistory.forEach(b => {
+        if (b.paymentStatus === 'credit') {
+            const key = `${b.customerName}_${b.customerPhone || ''}`;
+            if (!creditMap[key]) {
+                creditMap[key] = {
+                    name: b.customerName,
+                    phone: b.customerPhone || 'N/A',
+                    totalBalance: 0,
+                    unpaidBillsCount: 0,
+                    lastPurchase: b.date,
+                    billNos: []
+                };
+            }
+            creditMap[key].totalBalance += b.grandTotal;
+            creditMap[key].unpaidBillsCount += 1;
+            creditMap[key].billNos.push(b.billNo);
+            grandUdharTotal += b.grandTotal;
+        }
+    });
+
+    const customersList = Object.values(creditMap).filter(c => {
+        if (!searchTerm) return true;
+        return c.name.toLowerCase().includes(searchTerm) || c.phone.toLowerCase().includes(searchTerm);
+    });
+
+    const totalUdharEl = document.getElementById('total-udhar-balance');
+    const totalCustEl = document.getElementById('total-udhar-customers');
+    const badgeEl = document.getElementById('credit-cust-count-badge');
+
+    if (totalUdharEl) totalUdharEl.innerText = `₹${grandUdharTotal}`;
+    if (totalCustEl) totalCustEl.innerText = Object.keys(creditMap).length;
+    if (badgeEl) badgeEl.innerText = Object.keys(creditMap).length;
+
+    if (customersList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-500 font-medium">No pending credit (Udhar) customers found. All clear! 🎉</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = customersList.map(c => `
+        <tr class="hover:bg-white/5 transition">
+            <td class="px-4 py-3 font-semibold text-white">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-red-500/20 text-red-400 font-bold flex items-center justify-center text-xs border border-red-500/30">
+                        ${c.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span>${c.name}</span>
+                </div>
+            </td>
+            <td class="px-4 py-3 font-mono text-xs text-gray-300">${c.phone}</td>
+            <td class="px-4 py-3 text-center">
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    ${c.unpaidBillsCount} ${c.unpaidBillsCount === 1 ? 'Bill' : 'Bills'} (#${c.billNos.join(', #')})
+                </span>
+            </td>
+            <td class="px-4 py-3 text-right font-mono font-extrabold text-red-400 text-base">₹${c.totalBalance}</td>
+            <td class="px-4 py-3 text-center text-xs text-gray-400">${c.lastPurchase}</td>
+            <td class="px-4 py-3 text-right">
+                <button onclick="payCustomerCreditAll('${c.name.replace(/'/g, "\\'")}', '${c.phone}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition inline-flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-check"></i> Settle Udhar (₹${c.totalBalance})
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function payCustomerCreditAll(custName, custPhone) {
+    let matchCount = 0;
+    let settledTotal = 0;
+
+    billsHistory.forEach(b => {
+        if (b.paymentStatus === 'credit' && b.customerName === custName) {
+            b.paymentStatus = 'paid';
+            settledTotal += b.grandTotal;
+            matchCount++;
+        }
+    });
+
+    if (matchCount > 0) {
+        localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+        renderCreditCustomersTable();
+        renderHistoryTable();
+        updateHeaderStats();
+        showToastNotification(`Successfully settled ₹${settledTotal} Udhar balance for ${custName}!`, 'success');
+    }
 }
 
 function updateHeaderStats() {
