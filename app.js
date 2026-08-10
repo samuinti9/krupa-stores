@@ -472,13 +472,100 @@ function animateParticles() {
     requestAnimationFrame(animateParticles);
 }
 
+// ================= MASTER PIN SECURITY ENGINE =================
+let masterPin = localStorage.getItem('krupa_master_pin') || '1234';
+let isPinRequired = localStorage.getItem('krupa_pin_required') === 'true';
+let isStoreUnlocked = false;
+let pendingUnlockTargetTab = null;
+let currentEnteredPin = '';
+
+function lockStoreApp() {
+    isStoreUnlocked = false;
+    currentEnteredPin = '';
+    updatePinDisplay();
+    document.getElementById('pin-error-msg').classList.add('hidden');
+    document.getElementById('security-lock-modal').classList.remove('hidden');
+    showToastNotification('🔒 Store App locked with Master PIN', 'info');
+}
+
+function unlockStoreApp() {
+    isStoreUnlocked = true;
+    document.getElementById('security-lock-modal').classList.add('hidden');
+    showToastNotification('🔓 Admin mode unlocked!', 'success');
+    if (pendingUnlockTargetTab) {
+        switchTab(pendingUnlockTargetTab, true);
+        pendingUnlockTargetTab = null;
+    }
+}
+
+function pressPinNum(digit) {
+    if (currentEnteredPin.length < 4) {
+        currentEnteredPin += digit;
+        updatePinDisplay();
+    }
+    if (currentEnteredPin.length === 4) {
+        submitPinUnlock();
+    }
+}
+
+function clearPinInput() {
+    currentEnteredPin = '';
+    updatePinDisplay();
+    document.getElementById('pin-error-msg').classList.add('hidden');
+}
+
+function updatePinDisplay() {
+    for (let i = 1; i <= 4; i++) {
+        const input = document.getElementById(`pin-digit-${i}`);
+        if (input) {
+            input.value = currentEnteredPin.length >= i ? '•' : '';
+        }
+    }
+}
+
+function submitPinUnlock() {
+    if (currentEnteredPin === masterPin) {
+        unlockStoreApp();
+    } else {
+        document.getElementById('pin-error-msg').classList.remove('hidden');
+        currentEnteredPin = '';
+        updatePinDisplay();
+    }
+}
+
+function handleSaveMasterPin(event) {
+    event.preventDefault();
+    const isRequired = document.getElementById('setting-pin-required').checked;
+    const newPin = document.getElementById('setting-new-pin').value.trim();
+
+    if (newPin && newPin.length === 4 && /^\d+$/.test(newPin)) {
+        masterPin = newPin;
+        localStorage.setItem('krupa_master_pin', masterPin);
+        document.getElementById('setting-new-pin').value = '';
+    }
+
+    isPinRequired = isRequired;
+    localStorage.setItem('krupa_pin_required', isPinRequired.toString());
+    showToastNotification('Security PIN settings updated successfully!', 'success');
+}
+
 function updateClock() {
     const now = new Date();
     const clockEl = document.getElementById('current-clock');
     if (clockEl) clockEl.innerText = now.toLocaleTimeString();
 }
 
-function switchTab(tabName) {
+function switchTab(tabName, skipPinCheck = false) {
+    if (isPinRequired && !isStoreUnlocked && ['history', 'customers', 'items', 'settings'].includes(tabName) && !skipPinCheck) {
+        pendingUnlockTargetTab = tabName;
+        document.getElementById('pin-error-msg').classList.add('hidden');
+        currentEnteredPin = '';
+        updatePinDisplay();
+        document.getElementById('security-lock-modal').classList.remove('hidden');
+        showToastNotification('🔒 Master PIN required to access admin tab', 'warning');
+        return;
+    }
+
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.className = 'tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition text-slate-300 hover:text-white hover:bg-slate-800';
