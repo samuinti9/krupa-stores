@@ -370,20 +370,17 @@ function setPaymentMode(mode) {
     const paidBtn = document.getElementById('pay-mode-paid');
     const creditBtn = document.getElementById('pay-mode-credit');
     const warning = document.getElementById('credit-warning-note');
-    const bookOption = document.getElementById('credit-book-note-option');
     const custInput = document.getElementById('cust-name');
 
     if (mode === 'paid') {
         paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-emerald-600 text-white shadow';
         creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-red-300 hover:text-white';
         if (warning) warning.classList.add('hidden');
-        if (bookOption) bookOption.classList.add('hidden');
         if (custInput) custInput.placeholder = "Customer Name (Optional)";
     } else {
         paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-emerald-300 hover:text-white';
         creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-red-600 text-white shadow';
         if (warning) warning.classList.remove('hidden');
-        if (bookOption) bookOption.classList.remove('hidden');
         if (custInput) custInput.placeholder = "Customer Name (REQUIRED for Credit)";
     }
 }
