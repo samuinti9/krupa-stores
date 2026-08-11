@@ -825,6 +825,61 @@
         </div>
     </div>
 
+    <!-- MODAL 4: UDHAR SETTLEMENT PAYMENT MODAL -->
+    <div id="udhar-settlement-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden p-4 overflow-y-auto">
+        <div class="glass-card rounded-3xl max-w-sm w-full p-6 border border-white/10 shadow-2xl space-y-4 relative my-auto">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-sm border border-emerald-500/30">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold font-outfit text-white">Settle Udhar / Credit</h3>
+                        <p class="text-[11px] text-gray-400">Record customer payment settlement</p>
+                    </div>
+                </div>
+                <button onclick="closeUdharSettlementModal()" class="w-7 h-7 rounded-full bg-white/10 text-gray-300 hover:text-white flex items-center justify-center text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Customer Details Card -->
+            <div class="bg-gray-900/80 p-3 rounded-2xl border border-white/10 space-y-1">
+                <div class="text-xs text-gray-400">Customer / Bill Details</div>
+                <div class="text-sm font-bold text-white" id="settle-modal-cust-name">-</div>
+                <div class="flex items-center justify-between text-xs pt-1.5 border-t border-white/5 mt-1">
+                    <span class="text-gray-400">Pending Udhar Balance:</span>
+                    <span class="font-mono font-extrabold text-red-400 text-sm" id="settle-modal-cust-amt">₹0</span>
+                </div>
+            </div>
+
+            <!-- Choose Payment Mode -->
+            <div>
+                <label class="text-xs text-gray-300 font-semibold block mb-2">Select Payment Method Received:</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="settle-pay-cash" onclick="selectSettlePayMode('cash')" class="p-3 rounded-2xl border border-emerald-500/50 bg-emerald-600/30 text-emerald-300 font-bold text-xs flex flex-col items-center justify-center gap-1 shadow transition">
+                        <i class="fa-solid fa-money-bill-wave text-lg"></i>
+                        <span>💵 Cash Payment</span>
+                    </button>
+                    <button type="button" id="settle-pay-online" onclick="selectSettlePayMode('online')" class="p-3 rounded-2xl border border-white/10 bg-gray-900/60 text-gray-400 font-bold text-xs flex flex-col items-center justify-center gap-1 hover:text-indigo-300 transition">
+                        <i class="fa-solid fa-mobile-screen-button text-lg"></i>
+                        <span>📱 Online / UPI</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-2 flex items-center gap-2">
+                <button onclick="confirmUdharSettlement()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-circle-check text-sm"></i> Confirm Settlement
+                </button>
+                <button onclick="closeUdharSettlementModal()" class="py-3 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold text-xs rounded-xl transition">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL 3: SECURITY LOCK OVERLAY MODAL -->
     <div id="security-lock-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-xl hidden p-4 overflow-y-auto">
         <div class="glass-card rounded-3xl max-w-xs w-full p-6 border border-white/10 shadow-2xl text-center space-y-4 relative my-auto">

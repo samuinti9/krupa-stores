@@ -1093,15 +1093,13 @@ function markBillAsPaid(billNo, payMode = 'cash') {
     if (!bill) return;
 
     const modeLabel = payMode === 'online' ? 'ONLINE / UPI 📱' : 'CASH 💵';
-    if (confirm(`Mark Bill #${billNo} for ${bill.customerName} (₹${bill.grandTotal}) as PAID via ${modeLabel}?`)) {
-        bill.paymentStatus = payMode;
-        localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
-        syncDataToSQLite();
-        renderHistoryTable();
-        renderCreditCustomersTable();
-        updateHeaderStats();
-        showToastNotification(`Bill #${billNo} marked as PAID via ${modeLabel}!`, 'success');
-    }
+    bill.paymentStatus = payMode;
+    localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+    syncDataToSQLite();
+    renderHistoryTable();
+    renderCreditCustomersTable();
+    updateHeaderStats();
+    showToastNotification(`Bill #${billNo} marked as PAID via ${modeLabel}!`, 'success');
 }
 
 function renderHistoryTable() {
@@ -1216,7 +1214,7 @@ function renderHistoryTable() {
                         <button onclick="toggleBookNoted(${b.billNo})" title="Toggle physical book status" class="px-2.5 py-1 ${b.isBookNoted ? 'bg-amber-600/80 hover:bg-amber-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30'} text-xs font-semibold rounded-lg shadow transition">
                             <i class="fa-solid fa-book mr-1"></i> ${b.isBookNoted ? 'Noted' : '+ Book'}
                         </button>
-                        <button onclick="markBillAsPaid(${b.billNo})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow transition">
+                        <button onclick="openUdharSettlementModalForBill(${b.billNo})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow transition">
                             <i class="fa-solid fa-check mr-1"></i> Mark Paid
                         </button>
                     ` : ''}
@@ -1321,25 +1319,78 @@ function renderCreditCustomersTable() {
             <td class="px-4 py-3 text-right font-mono font-extrabold text-red-400 text-base">₹${c.totalBalance}</td>
             <td class="px-4 py-3 text-center text-xs text-gray-400">${c.lastPurchase}</td>
             <td class="px-4 py-3 text-right">
-                <div class="flex items-center justify-end gap-1.5">
-                    <button onclick="payCustomerCreditAll('${c.name.replace(/'/g, "\\'")}', '${c.phone}', 'cash')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition inline-flex items-center gap-1">
-                        💵 Cash
-                    </button>
-                    <button onclick="payCustomerCreditAll('${c.name.replace(/'/g, "\\'")}', '${c.phone}', 'online')" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition inline-flex items-center gap-1">
-                        📱 Online
-                    </button>
-                </div>
+                <button onclick="openUdharSettlementModalForCustomer('${c.name.replace(/'/g, "\\'")}', '${c.phone}', ${c.totalBalance})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition inline-flex items-center gap-1.5">
+                    <i class="fa-solid fa-hand-holding-dollar"></i> Settle Udhar (₹${c.totalBalance})
+                </button>
             </td>
         </tr>
     `).join('');
+}
+
+// ================= UDHAR SETTLEMENT MODAL HANDLERS =================
+let currentSettleTarget = null;
+let currentSettlePayMode = 'cash';
+
+function openUdharSettlementModalForCustomer(custName, custPhone, totalBalance) {
+    currentSettleTarget = { type: 'customer', custName, custPhone, amount: totalBalance };
+    currentSettlePayMode = 'cash';
+
+    document.getElementById('settle-modal-cust-name').innerText = custName;
+    document.getElementById('settle-modal-cust-amt').innerText = `₹${totalBalance}`;
+
+    selectSettlePayMode('cash');
+    document.getElementById('udhar-settlement-modal')?.classList.remove('hidden');
+}
+
+function openUdharSettlementModalForBill(billNo) {
+    const bill = billsHistory.find(b => b.billNo === billNo);
+    if (!bill) return;
+
+    currentSettleTarget = { type: 'bill', billNo: bill.billNo, custName: bill.customerName, amount: bill.grandTotal };
+    currentSettlePayMode = 'cash';
+
+    document.getElementById('settle-modal-cust-name').innerText = `${bill.customerName} (Bill #${bill.billNo})`;
+    document.getElementById('settle-modal-cust-amt').innerText = `₹${bill.grandTotal}`;
+
+    selectSettlePayMode('cash');
+    document.getElementById('udhar-settlement-modal')?.classList.remove('hidden');
+}
+
+function selectSettlePayMode(mode) {
+    currentSettlePayMode = mode;
+    const cashBtn = document.getElementById('settle-pay-cash');
+    const onlineBtn = document.getElementById('settle-pay-online');
+
+    if (mode === 'cash') {
+        if (cashBtn) cashBtn.className = 'p-3 rounded-2xl border border-emerald-500/50 bg-emerald-600/30 text-emerald-300 font-bold text-xs flex flex-col items-center justify-center gap-1 shadow transition';
+        if (onlineBtn) onlineBtn.className = 'p-3 rounded-2xl border border-white/10 bg-gray-900/60 text-gray-400 font-bold text-xs flex flex-col items-center justify-center gap-1 hover:text-indigo-300 transition';
+    } else {
+        if (cashBtn) cashBtn.className = 'p-3 rounded-2xl border border-white/10 bg-gray-900/60 text-gray-400 font-bold text-xs flex flex-col items-center justify-center gap-1 hover:text-emerald-300 transition';
+        if (onlineBtn) onlineBtn.className = 'p-3 rounded-2xl border border-indigo-500/50 bg-indigo-600/30 text-indigo-300 font-bold text-xs flex flex-col items-center justify-center gap-1 shadow transition';
+    }
+}
+
+function closeUdharSettlementModal() {
+    document.getElementById('udhar-settlement-modal')?.classList.add('hidden');
+    currentSettleTarget = null;
+}
+
+function confirmUdharSettlement() {
+    if (!currentSettleTarget) return;
+
+    if (currentSettleTarget.type === 'customer') {
+        payCustomerCreditAll(currentSettleTarget.custName, currentSettleTarget.custPhone, currentSettlePayMode);
+    } else if (currentSettleTarget.type === 'bill') {
+        markBillAsPaid(currentSettleTarget.billNo, currentSettlePayMode);
+    }
+
+    closeUdharSettlementModal();
 }
 
 function payCustomerCreditAll(custName, custPhone, payMode = 'cash') {
     let matchCount = 0;
     let settledTotal = 0;
     const modeLabel = payMode === 'online' ? 'ONLINE / UPI 📱' : 'CASH 💵';
-
-    if (!confirm(`Settle total Udhar balance for ${custName} via ${modeLabel}?`)) return;
 
     billsHistory.forEach(b => {
         if (b.paymentStatus === 'credit' && b.customerName === custName) {
