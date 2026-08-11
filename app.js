@@ -159,6 +159,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCartUI();
     const billNoEl = document.getElementById('current-bill-no');
     if (billNoEl) billNoEl.innerText = `Bill #${currentBillNumber}`;
+    
+    // Initialize SQLite WASM Engine
+    initSQLiteDB();
 });
 
 // Scroll to Cart Summary on Mobile
@@ -742,6 +745,7 @@ function checkoutBill(showReceiptModal) {
 
     billsHistory.unshift(billData);
     localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+    syncDataToSQLite();
     
     currentBillNumber++;
     localStorage.setItem('krupa_last_bill_no', currentBillNumber.toString());
@@ -917,6 +921,7 @@ function handleSaveItem(e) {
     }
 
     localStorage.setItem('krupa_items', JSON.stringify(items));
+    syncDataToSQLite();
     renderItemsTable();
     renderPosItems();
     closeItemModal();
@@ -927,6 +932,7 @@ function deleteItem(id) {
     if (confirm('Are you sure you want to delete this item?')) {
         items = items.filter(i => i.id !== id);
         localStorage.setItem('krupa_items', JSON.stringify(items));
+        syncDataToSQLite();
         renderItemsTable();
         renderPosItems();
         showToastNotification('Item removed!', 'info');
@@ -1005,6 +1011,7 @@ function markBillAsPaid(billNo) {
     if (confirm(`Are you sure you want to mark Bill #${billNo} for ${bill.customerName} (₹${bill.grandTotal}) as PAID?`)) {
         bill.paymentStatus = 'paid';
         localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+        syncDataToSQLite();
         renderHistoryTable();
         renderCreditCustomersTable();
         updateHeaderStats();
@@ -1251,6 +1258,7 @@ function payCustomerCreditAll(custName, custPhone) {
 
     if (matchCount > 0) {
         localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+        syncDataToSQLite();
         renderCreditCustomersTable();
         renderHistoryTable();
         updateHeaderStats();
@@ -1266,4 +1274,270 @@ function updateHeaderStats() {
     }, 0);
     const headerSales = document.getElementById('header-today-sales');
     if (headerSales) headerSales.innerText = `₹${todaySales}`;
+}
+
+// ================= SQLITE WASM & EXCEL EXPORT ENGINE =================
+let sqliteDB = null;
+
+async function initSQLiteDB() {
+    try {
+        if (typeof initSqlJs === 'function') {
+            const SQL = await initSqlJs({
+                locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+            });
+
+            const savedBytes = localStorage.getItem('krupa_sqlite_db_bytes');
+            if (savedBytes) {
+                try {
+                    const uarr = new Uint8Array(JSON.parse(savedBytes));
+                    sqliteDB = new SQL.Database(uarr);
+                } catch(e) {
+                    sqliteDB = new SQL.Database();
+                }
+            } else {
+                sqliteDB = new SQL.Database();
+            }
+
+            createSQLiteTables();
+            syncDataToSQLite();
+            console.log("SQLite WASM Database Engine initialized successfully!");
+        }
+    } catch (err) {
+        console.warn("SQLite WASM Engine init notice:", err);
+    }
+}
+
+function createSQLiteTables() {
+    if (!sqliteDB) return;
+    try {
+        sqliteDB.run(`
+            CREATE TABLE IF NOT EXISTS items (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                category TEXT NOT NULL,
+                price REAL NOT NULL,
+                stock INTEGER NOT NULL
+            );
+        `);
+        sqliteDB.run(`
+            CREATE TABLE IF NOT EXISTS bills (
+                billNo INTEGER PRIMARY KEY,
+                createdAt INTEGER NOT NULL,
+                date TEXT NOT NULL,
+                customerName TEXT NOT NULL,
+                customerPhone TEXT,
+                subtotal REAL NOT NULL,
+                discount REAL NOT NULL,
+                grandTotal REAL NOT NULL,
+                paymentStatus TEXT NOT NULL,
+                isBookNoted INTEGER DEFAULT 0,
+                itemsJson TEXT NOT NULL
+            );
+        `);
+    } catch (e) {
+        console.warn("Error creating SQLite tables:", e);
+    }
+}
+
+function syncDataToSQLite() {
+    if (!sqliteDB) return;
+    try {
+        items.forEach(item => {
+            sqliteDB.run(
+                `INSERT OR REPLACE INTO items (id, name, category, price, stock) VALUES (?, ?, ?, ?, ?)`,
+                [item.id, item.name, item.category, item.price, item.stock]
+            );
+        });
+
+        billsHistory.forEach(bill => {
+            const bDateObj = getBillDateObj(bill);
+            sqliteDB.run(
+                `INSERT OR REPLACE INTO bills (billNo, createdAt, date, customerName, customerPhone, subtotal, discount, grandTotal, paymentStatus, isBookNoted, itemsJson) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    bill.billNo,
+                    bDateObj.getTime(),
+                    bill.date,
+                    bill.customerName,
+                    bill.customerPhone || '',
+                    bill.subtotal,
+                    bill.discount,
+                    bill.grandTotal,
+                    bill.paymentStatus || 'paid',
+                    bill.isBookNoted ? 1 : 0,
+                    JSON.stringify(bill.items || [])
+                ]
+            );
+        });
+
+        saveSQLiteToLocalStorage();
+    } catch (e) {
+        console.warn("SQLite sync notice:", e);
+    }
+}
+
+function saveSQLiteToLocalStorage() {
+    if (!sqliteDB) return;
+    try {
+        const binaryArray = sqliteDB.export();
+        localStorage.setItem('krupa_sqlite_db_bytes', JSON.stringify(Array.from(binaryArray)));
+    } catch (e) {
+        console.warn("Error saving SQLite binary buffer:", e);
+    }
+}
+
+// 1-CLICK EXCEL EXPORT FUNCTIONS (SheetJS)
+function exportBillsToExcel() {
+    if (typeof XLSX === 'undefined') {
+        showToastNotification('Excel export library is loading... Please retry in a moment.', 'info');
+        return;
+    }
+    
+    if (!billsHistory || billsHistory.length === 0) {
+        showToastNotification('No sales bill records available to export!', 'info');
+        return;
+    }
+
+    const exportData = billsHistory.map(b => {
+        const itemsSummary = (b.items || []).map(i => `${i.name} (x${i.qty})`).join(', ');
+        return {
+            "Bill No": `#${b.billNo}`,
+            "Date & Time": b.date,
+            "Customer Name": b.customerName,
+            "Phone Number": b.customerPhone || 'N/A',
+            "Items Summary": itemsSummary,
+            "Subtotal (₹)": b.subtotal,
+            "Discount (₹)": b.discount,
+            "Grand Total (₹)": b.grandTotal,
+            "Payment Status": (b.paymentStatus || 'paid').toUpperCase(),
+            "Noted in Book": b.isBookNoted ? 'YES' : 'NO'
+        };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales History");
+
+    worksheet['!cols'] = [
+        { wch: 10 }, { wch: 22 }, { wch: 20 }, { wch: 15 },
+        { wch: 35 }, { wch: 12 }, { wch: 12 }, { wch: 15 },
+        { wch: 15 }, { wch: 15 }
+    ];
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `Krupa_Sales_History_${todayStr}.xlsx`);
+    showToastNotification('Sales history exported to Excel (.xlsx) successfully! 📊', 'success');
+}
+
+function exportCreditToExcel() {
+    if (typeof XLSX === 'undefined') {
+        showToastNotification('Excel export library is loading... Please retry in a moment.', 'info');
+        return;
+    }
+
+    const creditMap = {};
+    billsHistory.forEach(b => {
+        if (b.paymentStatus === 'credit') {
+            const key = `${b.customerName}_${b.customerPhone || ''}`;
+            if (!creditMap[key]) {
+                creditMap[key] = {
+                    name: b.customerName,
+                    phone: b.customerPhone || 'N/A',
+                    totalBalance: 0,
+                    unpaidBillsCount: 0,
+                    lastPurchase: b.date,
+                    billNos: []
+                };
+            }
+            creditMap[key].totalBalance += b.grandTotal;
+            creditMap[key].unpaidBillsCount += 1;
+            creditMap[key].billNos.push(`#${b.billNo}`);
+        }
+    });
+
+    const exportData = Object.values(creditMap).map(c => ({
+        "Customer Name": c.name,
+        "Phone Number": c.phone,
+        "Unpaid Bills Count": c.unpaidBillsCount,
+        "Unpaid Bill Numbers": c.billNos.join(', '),
+        "Outstanding Udhar Balance (₹)": c.totalBalance,
+        "Last Purchase Date": c.lastPurchase
+    }));
+
+    if (exportData.length === 0) {
+        showToastNotification('No pending credit (Udhar) customer records found to export!', 'info');
+        return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Udhar Khata Directory");
+
+    worksheet['!cols'] = [
+        { wch: 22 }, { wch: 16 }, { wch: 18 }, { wch: 25 }, { wch: 25 }, { wch: 22 }
+    ];
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `Krupa_Udhar_Ledger_${todayStr}.xlsx`);
+    showToastNotification('Udhar Khata ledger exported to Excel (.xlsx) successfully! 📖', 'success');
+}
+
+function exportItemsToExcel() {
+    if (typeof XLSX === 'undefined') {
+        showToastNotification('Excel export library is loading... Please retry in a moment.', 'info');
+        return;
+    }
+
+    const exportData = items.map(i => ({
+        "Item ID": i.id,
+        "Item Name": i.name,
+        "Category": i.category.toUpperCase(),
+        "Selling Price (₹)": i.price,
+        "Stock Quantity": i.stock,
+        "Stock Value (₹)": i.price * i.stock
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory Catalogue");
+
+    worksheet['!cols'] = [
+        { wch: 10 }, { wch: 25 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 18 }
+    ];
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `Krupa_Inventory_Catalogue_${todayStr}.xlsx`);
+    showToastNotification('Inventory catalogue exported to Excel (.xlsx)! 📦', 'success');
+}
+
+function exportSQLiteDBFile() {
+    try {
+        let binaryArray;
+        if (sqliteDB) {
+            binaryArray = sqliteDB.export();
+        } else {
+            const savedBytes = localStorage.getItem('krupa_sqlite_db_bytes');
+            if (savedBytes) binaryArray = new Uint8Array(JSON.parse(savedBytes));
+        }
+
+        if (!binaryArray) {
+            showToastNotification('SQLite database is initializing...', 'info');
+            return;
+        }
+
+        const blob = new Blob([binaryArray], { type: 'application/x-sqlite3' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const todayStr = new Date().toISOString().split('T')[0];
+        a.download = `krupa_store_${todayStr}.sqlite`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToastNotification('SQLite database file (.sqlite) downloaded! 🗄️', 'success');
+    } catch (e) {
+        console.error("Error exporting SQLite file:", e);
+        showToastNotification('Failed to download SQLite file', 'error');
+    }
 }
