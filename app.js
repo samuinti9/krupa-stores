@@ -333,12 +333,13 @@ function triggerCheckoutCelebration() {
 // ================= MASTER PIN SECURITY ENGINE =================
 let masterPin = localStorage.getItem('krupa_master_pin') || '1234';
 let isPinRequired = localStorage.getItem('krupa_pin_required') === 'true';
-let isStoreUnlocked = false;
+let isStoreUnlocked = sessionStorage.getItem('krupa_admin_unlocked') === 'true';
 let pendingUnlockTargetTab = null;
 let currentEnteredPin = '';
 
 function lockStoreApp() {
     isStoreUnlocked = false;
+    sessionStorage.removeItem('krupa_admin_unlocked');
     currentEnteredPin = '';
     updatePinDisplay();
     document.getElementById('pin-error-msg')?.classList.add('hidden');
@@ -348,6 +349,7 @@ function lockStoreApp() {
 
 function unlockStoreApp() {
     isStoreUnlocked = true;
+    sessionStorage.setItem('krupa_admin_unlocked', 'true');
     document.getElementById('security-lock-modal')?.classList.add('hidden');
     showToastNotification('🔓 Admin mode unlocked!', 'success');
     if (pendingUnlockTargetTab) {
