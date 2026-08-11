@@ -809,32 +809,68 @@ function setCartItemWeight(index, weight) {
     }
 }
 
+let currentQuickUnitMode = 'pcs';
+
+function setQuickUnitMode(mode) {
+    currentQuickUnitMode = mode;
+    const pcsBtn = document.getElementById('unit-mode-pcs-btn');
+    const weightBtn = document.getElementById('unit-mode-weight-btn');
+    const pcsSection = document.getElementById('quick-pcs-section');
+    const weightSection = document.getElementById('quick-weight-section');
+
+    if (mode === 'pcs') {
+        if (pcsBtn) pcsBtn.className = 'py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1 bg-indigo-600 text-white shadow';
+        if (weightBtn) weightBtn.className = 'py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1 text-gray-400 hover:text-white';
+        if (pcsSection) pcsSection.classList.remove('hidden');
+        if (weightSection) weightSection.classList.add('hidden');
+    } else {
+        if (weightBtn) weightBtn.className = 'py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1 bg-indigo-600 text-white shadow';
+        if (pcsBtn) pcsBtn.className = 'py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1 text-gray-400 hover:text-white';
+        if (weightSection) weightSection.classList.remove('hidden');
+        if (pcsSection) pcsSection.classList.add('hidden');
+    }
+}
+
+function handleQuickWeightSelect(val) {
+    const customInput = document.getElementById('quick-item-weight-custom');
+    if (customInput) {
+        if (val === 'custom') {
+            customInput.classList.remove('hidden');
+            customInput.focus();
+        } else {
+            customInput.classList.add('hidden');
+        }
+    }
+}
+
 function handleQuickCustomAdd(e) {
     e.preventDefault();
     const nameInput = document.getElementById('quick-item-name');
     const priceInput = document.getElementById('quick-item-price');
-    const unitSelect = document.getElementById('quick-item-unit');
-    const qtyInput = document.getElementById('quick-item-qty');
 
     const name = nameInput ? nameInput.value.trim() : '';
     const price = priceInput ? parseFloat(priceInput.value) : 0;
 
     let qty = 1;
-    if (unitSelect && unitSelect.value !== 'custom') {
-        qty = parseFloat(unitSelect.value);
-    } else if (qtyInput) {
-        qty = parseFloat(qtyInput.value) || 1;
+    if (currentQuickUnitMode === 'pcs') {
+        const pcsVal = document.getElementById('quick-item-pcs-val');
+        qty = pcsVal ? (parseInt(pcsVal.value) || 1) : 1;
+    } else {
+        const weightSelect = document.getElementById('quick-item-weight-select');
+        const weightCustom = document.getElementById('quick-item-weight-custom');
+        if (weightSelect && weightSelect.value !== 'custom') {
+            qty = parseFloat(weightSelect.value) || 1;
+        } else if (weightCustom) {
+            qty = parseFloat(weightCustom.value) || 1;
+        }
     }
 
     if (name && price > 0 && qty > 0) {
         addToCartDirect(name, price, qty);
         if (nameInput) nameInput.value = '';
         if (priceInput) priceInput.value = '';
-        if (unitSelect) unitSelect.value = '1';
-        if (qtyInput) {
-            qtyInput.value = '1';
-            qtyInput.classList.add('hidden');
-        }
+        const pcsVal = document.getElementById('quick-item-pcs-val');
+        if (pcsVal) pcsVal.value = '1';
         showToastNotification(`Added custom item "${name}" (${formatWeightOrQty(qty)}) to bill!`, 'success');
     }
 }
