@@ -1,0 +1,17 @@
+{
+  "name": "Krupa Store POS - Retail Fancy & Grocery",
+  "short_name": "Krupa POS",
+  "description": "Smart Point of Sale & Udhar Khata Management for Krupa Store",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "krupa_store_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

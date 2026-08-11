@@ -185,6 +185,40 @@ function setThemeMode(mode) {
     }
 }
 
+// Register Service Worker for Offline PWA Desktop/Mobile App Installation
+let deferredPWAInstallPrompt = null;
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('ServiceWorker registered:', reg.scope))
+            .catch(err => console.warn('ServiceWorker registration failed:', err));
+    });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPWAInstallPrompt = e;
+    const btn = document.getElementById('pwa-install-btn');
+    if (btn) btn.classList.remove('hidden');
+});
+
+function installPWAApp() {
+    if (deferredPWAInstallPrompt) {
+        deferredPWAInstallPrompt.prompt();
+        deferredPWAInstallPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                showToastNotification('Installing Krupa Store POS App on your device! 📲', 'success');
+            }
+            deferredPWAInstallPrompt = null;
+            const btn = document.getElementById('pwa-install-btn');
+            if (btn) btn.classList.add('hidden');
+        });
+    } else {
+        showToastNotification('To install, click browser menu (⋮) -> Install Krupa Store POS App', 'info');
+    }
+}
+
 // SLEEK NON-BLOCKING TOAST NOTIFICATION ENGINE
 function showToastNotification(msg, type = 'success') {
     const container = document.getElementById('toast-container');
