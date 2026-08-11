@@ -778,16 +778,19 @@ function formatWeightOrQty(qty) {
     const num = parseFloat(qty);
     if (isNaN(num)) return '1 Pcs';
 
-    if (num === 1) return '1 kg';
-    if (num === 0.5) return '500g (1/2 kg)';
-    if (num === 0.25) return '250g (1/4 kg)';
+    if (num === 0.5) return '500g';
+    if (num === 0.25) return '250g';
     if (num === 0.1) return '100g';
     if (num === 0.05) return '50g';
 
     if (num < 1) {
         return `${Math.round(num * 1000)}g`;
     }
-    return `${num} kg/Pcs`;
+
+    if (Number.isInteger(num)) {
+        return `${num} Pcs`;
+    }
+    return `${num} kg`;
 }
 
 function handleUnitSelect(val) {
@@ -930,27 +933,22 @@ function updateCartUI() {
             const qStr = formatWeightOrQty(item.qty);
 
             return `
-                <div class="p-2 rounded-xl bg-gray-900/80 border border-white/10 space-y-1.5 text-xs">
+                <div class="p-2.5 rounded-xl bg-gray-900/80 border border-white/10 space-y-1.5 text-xs">
                     <div class="flex items-center justify-between gap-1">
                         <span class="font-semibold text-gray-100 line-clamp-1">${item.name}</span>
                         <span class="text-emerald-400 font-mono font-bold text-sm shrink-0">₹${itemTotal}</span>
                     </div>
                     
-                    <div class="flex items-center justify-between gap-1 pt-1 border-t border-white/5">
-                        <!-- Quick Weight Selector Buttons -->
-                        <div class="flex items-center gap-1 overflow-x-auto text-[10px]">
-                            <button onclick="setCartItemWeight(${idx}, 1)" class="px-1.5 py-0.5 rounded font-medium transition ${item.qty === 1 ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}">1kg</button>
-                            <button onclick="setCartItemWeight(${idx}, 0.5)" class="px-1.5 py-0.5 rounded font-medium transition ${item.qty === 0.5 ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}">500g</button>
-                            <button onclick="setCartItemWeight(${idx}, 0.25)" class="px-1.5 py-0.5 rounded font-medium transition ${item.qty === 0.25 ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}">250g</button>
-                            <button onclick="setCartItemWeight(${idx}, 0.1)" class="px-1.5 py-0.5 rounded font-medium transition ${item.qty === 0.1 ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}">100g</button>
+                    <div class="flex items-center justify-between gap-1 pt-1.5 border-t border-white/5">
+                        <div class="text-[11px] text-gray-400 font-medium">
+                            ₹${item.price} <span class="text-[10px] text-gray-500">/ unit</span>
                         </div>
 
-                        <!-- Quantity Adjuster -->
-                        <div class="flex items-center gap-1 shrink-0">
-                            <button onclick="updateCartQty(${idx}, -1)" class="w-5 h-5 rounded bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold text-xs">-</button>
-                            <span class="font-mono font-extrabold text-xs px-1 text-indigo-300 min-w-[40px] text-center">${qStr}</span>
-                            <button onclick="updateCartQty(${idx}, 1)" class="w-5 h-5 rounded bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold text-xs">+</button>
-                            <button onclick="removeCartItem(${idx})" class="w-5 h-5 rounded text-red-400 hover:bg-red-500/20 ml-0.5"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button onclick="updateCartQty(${idx}, -1)" class="w-6 h-6 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold text-xs flex items-center justify-center transition border border-white/10">-</button>
+                            <span class="font-mono font-extrabold text-xs px-1.5 text-indigo-300 min-w-[45px] text-center">${qStr}</span>
+                            <button onclick="updateCartQty(${idx}, 1)" class="w-6 h-6 rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold text-xs flex items-center justify-center transition border border-white/10">+</button>
+                            <button onclick="removeCartItem(${idx})" class="w-6 h-6 rounded-lg text-red-400 hover:bg-red-500/20 flex items-center justify-center ml-1 transition"><i class="fa-solid fa-trash text-xs"></i></button>
                         </div>
                     </div>
                 </div>
