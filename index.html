@@ -47,16 +47,16 @@
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
 
     <!-- Header Navigation Bar (Compact & Mobile Responsive) -->
-    <header class="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-gray-200 px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 shadow-sm">
+    <header class="app-header sticky top-0 z-40 px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 shadow-sm">
         <div class="flex items-center gap-2.5">
             <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow shrink-0">
                 <i class="fa-solid fa-store text-base sm:text-lg"></i>
             </div>
             <div>
-                <h1 class="text-base sm:text-xl font-bold font-outfit tracking-tight text-slate-900 leading-tight">
-                    KRUPA <span class="text-indigo-600 font-semibold text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200">POS</span>
+                <h1 class="text-base sm:text-xl font-bold font-outfit tracking-tight leading-tight">
+                    KRUPA <span class="text-indigo-500 font-semibold text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30">POS</span>
                 </h1>
-                <p class="text-[10px] sm:text-xs text-slate-500 hidden xs:block">Retail Fancy & Grocery Management</p>
+                <p class="text-[10px] sm:text-xs text-slate-400 hidden xs:block">Retail Fancy & Grocery Management</p>
             </div>
         </div>
 
@@ -69,20 +69,20 @@
             </button>
 
             <!-- Clock (Hidden on Mobile) -->
-            <div class="hidden md:flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs text-slate-700">
-                <i class="fa-regular fa-clock text-indigo-600"></i>
+            <div class="hidden md:flex items-center gap-2 header-widget-box px-3 py-1.5 rounded-xl text-xs">
+                <i class="fa-regular fa-clock text-indigo-400"></i>
                 <span id="current-clock" class="font-mono font-semibold">--:--:--</span>
             </div>
 
             <!-- Sales Total -->
-            <div class="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-xl text-xs text-emerald-700 font-bold">
+            <div class="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1.5 rounded-xl text-xs text-emerald-400 font-bold">
                 <i class="fa-solid fa-indian-rupee-sign text-xs"></i>
                 <span>Sales: <span id="header-today-sales">₹0</span></span>
             </div>
 
             <!-- Quick Access Settings Button -->
-            <button onclick="switchTab('settings')" title="Open Store Settings" aria-label="Open Store Settings" class="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 transition shadow-sm">
-                <i class="fa-solid fa-gear text-indigo-600"></i>
+            <button onclick="switchTab('settings')" title="Open Store Settings" aria-label="Open Store Settings" class="flex items-center gap-1 px-2.5 py-1.5 header-widget-box hover:brightness-110 rounded-xl text-xs font-semibold transition shadow-sm">
+                <i class="fa-solid fa-gear text-indigo-400"></i>
                 <span class="hidden sm:inline">Settings</span>
             </button>
         </div>
