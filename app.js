@@ -772,10 +772,50 @@ function updateBillTotals() {
 
 function calculateChange() {
     let grandTotal = parseFloat(document.getElementById('bill-grand-total')?.innerText) || 0;
-    let cashGiven = parseFloat(document.getElementById('cash-given')?.value) || 0;
-    let change = cashGiven > grandTotal ? cashGiven - grandTotal : 0;
+    let cashGivenInput = document.getElementById('cash-given');
+    let cashGivenVal = cashGivenInput ? cashGivenInput.value.trim() : '';
+    let cashGiven = parseFloat(cashGivenVal) || 0;
+
+    const labelEl = document.getElementById('cash-change-label');
     const changeEl = document.getElementById('cash-change');
-    if (changeEl) changeEl.innerText = `₹${change}`;
+    const changeBox = document.getElementById('cash-change-box');
+
+    if (cashGivenVal === '' || cashGiven === 0) {
+        if (labelEl) {
+            labelEl.innerText = 'Return Change';
+            labelEl.className = 'text-[11px] text-gray-400 block mb-0.5 transition';
+        }
+        if (changeEl) {
+            changeEl.innerText = '₹0';
+            changeEl.className = 'text-gray-300';
+        }
+        if (changeBox) changeBox.className = 'glass-input px-2 py-1 rounded text-xs font-mono font-bold flex items-center justify-end h-[34px] sm:h-[28px] border-white/10 transition';
+        return;
+    }
+
+    if (cashGiven >= grandTotal) {
+        let change = cashGiven - grandTotal;
+        if (labelEl) {
+            labelEl.innerText = 'Return Change 🟢';
+            labelEl.className = 'text-[11px] text-emerald-400 font-bold block mb-0.5 transition';
+        }
+        if (changeEl) {
+            changeEl.innerText = `₹${change.toFixed(2).replace(/\.00$/, '')}`;
+            changeEl.className = 'text-emerald-400 font-extrabold text-sm';
+        }
+        if (changeBox) changeBox.className = 'glass-input px-2 py-1 rounded text-xs font-mono font-bold flex items-center justify-end h-[34px] sm:h-[28px] border-emerald-500/50 bg-emerald-950/40 shadow transition';
+    } else {
+        let needToPay = grandTotal - cashGiven;
+        if (labelEl) {
+            labelEl.innerText = 'Need to Pay (Udhar) 🔴';
+            labelEl.className = 'text-[11px] text-red-400 font-bold block mb-0.5 transition';
+        }
+        if (changeEl) {
+            changeEl.innerText = `₹${needToPay.toFixed(2).replace(/\.00$/, '')}`;
+            changeEl.className = 'text-red-400 font-extrabold text-sm';
+        }
+        if (changeBox) changeBox.className = 'glass-input px-2 py-1 rounded text-xs font-mono font-bold flex items-center justify-end h-[34px] sm:h-[28px] border-red-500/50 bg-red-950/40 shadow transition';
+    }
 }
 
 // CHECKOUT & BILL GENERATION
