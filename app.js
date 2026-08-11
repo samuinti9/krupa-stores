@@ -918,15 +918,20 @@ function openReceiptModal(bill) {
 
     let statusText = '💵 CASH PAYMENT';
     let stampStyle = 'bg-emerald-100 text-emerald-800 border-emerald-400';
-    let isCredit = (bill.paymentStatus === 'credit');
+    let isCredit = (bill.paymentStatus === 'credit' || (bill.dueAmount !== undefined && bill.dueAmount > 0));
 
-    let paid = bill.paidAmount !== undefined ? bill.paidAmount : (isCredit ? 0 : bill.grandTotal);
-    let due = bill.dueAmount !== undefined ? bill.dueAmount : (isCredit ? bill.grandTotal : 0);
+    let paid = bill.paidAmount !== undefined 
+        ? bill.paidAmount 
+        : (bill.cashGiven > 0 ? Math.min(bill.cashGiven, bill.grandTotal) : (isCredit ? 0 : bill.grandTotal));
+    
+    let due = bill.dueAmount !== undefined 
+        ? bill.dueAmount 
+        : (isCredit ? Math.max(0, bill.grandTotal - paid) : 0);
 
     if (bill.paymentStatus === 'online') {
         statusText = '📱 ONLINE / UPI PAYMENT';
         stampStyle = 'bg-indigo-100 text-indigo-800 border-indigo-400';
-    } else if (isCredit) {
+    } else if (isCredit || due > 0) {
         statusText = due < bill.grandTotal && paid > 0 
             ? `🔴 PARTIAL UDHAR (PAID ₹${paid} | DUE ₹${due})` 
             : '🔴 CREDIT BILL / UNPAID (KHATA)';
@@ -945,14 +950,16 @@ function openReceiptModal(bill) {
         stamp.innerText = statusText;
     }
 
-    if (due > 0) {
+    if (due > 0 || paid > 0) {
         if (paidRow) {
             paidRow.classList.remove('hidden');
             document.getElementById('rec-paid-amt').innerText = paid;
         }
-        if (dueRow) {
+        if (dueRow && due > 0) {
             dueRow.classList.remove('hidden');
             document.getElementById('rec-due-amt').innerText = due;
+        } else if (dueRow) {
+            dueRow.classList.add('hidden');
         }
     } else {
         if (paidRow) paidRow.classList.add('hidden');
@@ -1368,7 +1375,9 @@ function renderCreditCustomersTable() {
                     billNos: []
                 };
             }
-            let dueForThisBill = b.dueAmount !== undefined ? b.dueAmount : b.grandTotal;
+            let dueForThisBill = b.dueAmount !== undefined 
+                ? b.dueAmount 
+                : (b.cashGiven > 0 ? Math.max(0, b.grandTotal - b.cashGiven) : b.grandTotal);
             creditMap[key].totalBalance += dueForThisBill;
             creditMap[key].unpaidBillsCount += 1;
             creditMap[key].billNos.push(b.billNo);
