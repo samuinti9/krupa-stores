@@ -133,20 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedThemeMode = localStorage.getItem('krupa_theme_mode') || 'light';
     setThemeMode(savedThemeMode);
 
-    // Load store profile settings if present
-    const profile = getStoredData('krupa_store_profile', {
-        name: 'Krupa Store',
-        tagline: 'Retail Fancy & Grocery Store',
-        phone: '+91 9876543210',
-        address: 'Main Market Road'
-    });
-
-    if (document.getElementById('setting-store-name')) {
-        document.getElementById('setting-store-name').value = profile.name;
-        document.getElementById('setting-store-tagline').value = profile.tagline;
-        document.getElementById('setting-store-phone').value = profile.phone;
-        document.getElementById('setting-store-address').value = profile.address;
-    }
+    // Load store profile & branding settings (Logo, Title, Tagline, Address, Footer)
+    loadStoreProfile();
 
     updateClock();
     setInterval(updateClock, 1000);
@@ -221,17 +209,95 @@ function showToastNotification(msg, type = 'success') {
     }, 3000);
 }
 
-// ================= SETTINGS & DATA BACKUP HANDLERS =================
+// ================= STORE BRANDING & PROFILE SETTINGS =================
+function loadStoreProfile() {
+    const storeName = localStorage.getItem('krupa_store_name') || 'KRUPA STORE';
+    const storeTagline = localStorage.getItem('krupa_store_tagline') || 'Retail Fancy & Grocery Store';
+    const storePhone = localStorage.getItem('krupa_store_phone') || '';
+    const storeAddress = localStorage.getItem('krupa_store_address') || '';
+    const storeFooter = localStorage.getItem('krupa_store_footer') || 'Thank you for shopping at Krupa Store! 🙏';
+    const storeLogo = localStorage.getItem('krupa_store_logo') || 'krupa_store_logo.png';
+
+    const nameEl = document.getElementById('setting-store-name');
+    const taglineEl = document.getElementById('setting-store-tagline');
+    const phoneEl = document.getElementById('setting-store-phone');
+    const addressEl = document.getElementById('setting-store-address');
+    const footerEl = document.getElementById('setting-store-footer');
+
+    if (nameEl) nameEl.value = storeName;
+    if (taglineEl) taglineEl.value = storeTagline;
+    if (phoneEl) phoneEl.value = storePhone;
+    if (addressEl) addressEl.value = storeAddress;
+    if (footerEl) footerEl.value = storeFooter;
+
+    updateLogoPreviewUI(storeLogo);
+}
+
+function updateLogoPreviewUI(logoSrc) {
+    const imgEl = document.getElementById('setting-logo-img');
+    const iconEl = document.getElementById('setting-logo-placeholder-icon');
+    const removeBtn = document.getElementById('setting-logo-remove-btn');
+
+    if (logoSrc) {
+        if (imgEl) {
+            imgEl.src = logoSrc;
+            imgEl.classList.remove('hidden');
+        }
+        if (iconEl) iconEl.classList.add('hidden');
+        if (removeBtn) removeBtn.classList.remove('hidden');
+    } else {
+        if (imgEl) {
+            imgEl.src = '';
+            imgEl.classList.add('hidden');
+        }
+        if (iconEl) iconEl.classList.remove('hidden');
+        if (removeBtn) removeBtn.classList.add('hidden');
+    }
+}
+
 function handleSaveStoreProfile(e) {
-    e.preventDefault();
-    const profile = {
-        name: document.getElementById('setting-store-name').value,
-        tagline: document.getElementById('setting-store-tagline').value,
-        phone: document.getElementById('setting-store-phone').value,
-        address: document.getElementById('setting-store-address').value
+    if (e) e.preventDefault();
+
+    const nameVal = (document.getElementById('setting-store-name')?.value || '').trim() || 'KRUPA STORE';
+    const taglineVal = (document.getElementById('setting-store-tagline')?.value || '').trim() || 'Retail Fancy & Grocery Store';
+    const phoneVal = (document.getElementById('setting-store-phone')?.value || '').trim();
+    const addressVal = (document.getElementById('setting-store-address')?.value || '').trim();
+    const footerVal = (document.getElementById('setting-store-footer')?.value || '').trim() || 'Thank you for shopping at Krupa Store! 🙏';
+
+    localStorage.setItem('krupa_store_name', nameVal);
+    localStorage.setItem('krupa_store_tagline', taglineVal);
+    localStorage.setItem('krupa_store_phone', phoneVal);
+    localStorage.setItem('krupa_store_address', addressVal);
+    localStorage.setItem('krupa_store_footer', footerVal);
+
+    showToastNotification('Store Branding & Profile Settings saved successfully! 🎨', 'success');
+}
+
+function handleLogoUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        showToastNotification('Please select a valid image file (PNG, JPG, WEBP)', 'warning');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+        const base64Data = evt.target.result;
+        localStorage.setItem('krupa_store_logo', base64Data);
+        updateLogoPreviewUI(base64Data);
+        showToastNotification('Store logo updated successfully! 🖼️', 'success');
     };
-    localStorage.setItem('krupa_store_profile', JSON.stringify(profile));
-    showToastNotification('Store profile settings saved successfully!', 'success');
+    reader.readAsDataURL(file);
+}
+
+function removeLogoImage() {
+    localStorage.removeItem('krupa_store_logo');
+    updateLogoPreviewUI(null);
+    const fileInput = document.getElementById('setting-logo-input');
+    if (fileInput) fileInput.value = '';
+    showToastNotification('Store logo removed', 'info');
 }
 
 function exportSystemData() {
@@ -915,6 +981,43 @@ function openReceiptModal(bill) {
     triggerCheckoutCelebration();
     document.getElementById('rec-bill-no').innerText = `Bill #${bill.billNo}`;
     document.getElementById('rec-datetime').innerText = `Date: ${bill.date}`;
+
+    // Populate Custom Store Branding (Logo, Title, Tagline, Address, Footer)
+    const storeName = localStorage.getItem('krupa_store_name') || 'KRUPA STORE';
+    const storeTagline = localStorage.getItem('krupa_store_tagline') || 'Retail Fancy & Grocery Store';
+    const storePhone = localStorage.getItem('krupa_store_phone') || '';
+    const storeAddress = localStorage.getItem('krupa_store_address') || '';
+    const storeFooter = localStorage.getItem('krupa_store_footer') || 'Thank you for shopping at Krupa Store! 🙏';
+    const storeLogo = localStorage.getItem('krupa_store_logo') || 'krupa_store_logo.png';
+
+    const titleEl = document.getElementById('rec-store-title');
+    const taglineEl = document.getElementById('rec-store-tagline');
+    const addressEl = document.getElementById('rec-store-address');
+    const footerTextEl = document.getElementById('rec-store-footer-text');
+    const logoContainer = document.getElementById('rec-logo-container');
+    const logoImg = document.getElementById('rec-logo-img');
+
+    if (titleEl) titleEl.innerText = storeName;
+    if (taglineEl) taglineEl.innerText = storeTagline;
+
+    let addressStr = [storeAddress, storePhone ? `Contact: ${storePhone}` : ''].filter(Boolean).join(' | ');
+    if (addressEl) {
+        if (addressStr) {
+            addressEl.innerText = addressStr;
+            addressEl.classList.remove('hidden');
+        } else {
+            addressEl.classList.add('hidden');
+        }
+    }
+
+    if (footerTextEl) footerTextEl.innerText = storeFooter;
+
+    if (storeLogo) {
+        if (logoImg) logoImg.src = storeLogo;
+        if (logoContainer) logoContainer.classList.remove('hidden');
+    } else {
+        if (logoContainer) logoContainer.classList.add('hidden');
+    }
 
     let statusText = '💵 CASH PAYMENT';
     let stampStyle = 'bg-emerald-100 text-emerald-800 border-emerald-400';

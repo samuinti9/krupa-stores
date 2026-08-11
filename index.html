@@ -570,63 +570,62 @@
                         <h3 class="font-bold text-white text-base">Store Profile & Receipt Details</h3>
                     </div>
 
-                    <form onsubmit="handleSaveStoreProfile(event)" class="space-y-3 text-xs">
-                        <div>
-                            <label class="text-gray-300 block mb-1 font-medium">Store Name</label>
-                            <input type="text" id="setting-store-name" required title="Store Name" placeholder="e.g. Krupa Store" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
-                        </div>
+                    <form onsubmit="handleSaveStoreProfile(event)" class="space-y-4 text-xs">
+                        <!-- Store Logo Upload & Live Preview -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center bg-gray-900/60 p-3.5 rounded-xl border border-white/5">
+                            <div class="text-center sm:text-left">
+                                <label class="text-xs font-semibold text-gray-300 block mb-0.5">Store Logo</label>
+                                <p class="text-[11px] text-gray-400">Printed at top of customer receipts</p>
+                            </div>
 
-                        <div>
-                            <label class="text-gray-300 block mb-1 font-medium">Tagline / Subtitle</label>
-                            <input type="text" id="setting-store-tagline" title="Tagline / Subtitle" placeholder="e.g. Retail Fancy & Grocery Store" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
+                            <div class="flex items-center justify-center">
+                                <div id="setting-logo-preview-box" class="w-16 h-16 rounded-xl bg-slate-800 border-2 border-dashed border-white/20 flex flex-col items-center justify-center overflow-hidden relative">
+                                    <i id="setting-logo-placeholder-icon" class="fa-solid fa-image text-xl text-gray-500"></i>
+                                    <img id="setting-logo-img" src="" class="w-full h-full object-contain hidden" alt="Store Logo Preview">
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-1.5">
+                                <label class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-xs text-center cursor-pointer shadow transition">
+                                    <i class="fa-solid fa-upload mr-1"></i> Upload Logo
+                                    <input type="file" id="setting-logo-input" accept="image/*" onchange="handleLogoUpload(event)" class="hidden">
+                                </label>
+                                <button type="button" onclick="removeLogoImage()" id="setting-logo-remove-btn" class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 rounded-xl text-[11px] font-semibold transition hidden">
+                                    <i class="fa-solid fa-trash mr-1"></i> Remove Logo
+                                </button>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="text-gray-300 block mb-1 font-medium">Phone Number</label>
+                                <label class="text-gray-300 block mb-1 font-medium">Store Name *</label>
+                                <input type="text" id="setting-store-name" required title="Store Name" placeholder="e.g. Krupa Store" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs font-bold text-white">
+                            </div>
+                            <div>
+                                <label class="text-gray-300 block mb-1 font-medium">Tagline / Subtitle</label>
+                                <input type="text" id="setting-store-tagline" title="Tagline / Subtitle" placeholder="e.g. Retail Fancy & Grocery Store" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-gray-300 block mb-1 font-medium font-mono">Phone Number</label>
                                 <input type="text" id="setting-store-phone" title="Phone Number" placeholder="e.g. +91 9876543210" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
                             </div>
                             <div>
                                 <label class="text-gray-300 block mb-1 font-medium">Store Address</label>
-                                <input type="text" id="setting-store-address" title="Store Address" placeholder="e.g. Main Market Road" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
+                                <input type="text" id="setting-store-address" title="Store Address" placeholder="e.g. Main Market Road, Shop #4" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
                             </div>
-                        </div>
-
-                        <div class="pt-2">
-                            <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 text-xs shadow-lg shadow-brand-600/30">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Profile Settings
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Master Security PIN Settings Card -->
-                <div class="glass-card rounded-2xl p-4 sm:p-6 border border-white/10 space-y-4">
-                    <div class="flex items-center gap-2 pb-3 border-b border-white/10 text-amber-400">
-                        <i class="fa-solid fa-lock text-lg"></i>
-                        <h3 class="font-bold text-white text-base">Store Lock & Master PIN Security</h3>
-                    </div>
-
-                    <form onsubmit="handleSaveMasterPin(event)" class="space-y-3 text-xs">
-                        <div class="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/10">
-                            <div>
-                                <span class="font-bold text-white block">Require Master PIN for Admin Tabs</span>
-                                <span class="text-[11px] text-gray-400">Locks History, Udhar Ledger & Settings</span>
-                            </div>
-                            <input type="checkbox" id="setting-pin-required" title="Require Master PIN for Admin Tabs" aria-label="Require Master PIN for Admin Tabs" class="w-4 h-4 text-indigo-600 rounded accent-indigo-600 cursor-pointer">
                         </div>
 
                         <div>
-                            <label class="text-gray-300 block mb-1 font-medium">New 4-Digit Master PIN</label>
-                            <input type="password" id="setting-new-pin" maxlength="4" pattern="[0-9]{4}" title="4-Digit PIN" placeholder="Default: 1234" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm font-mono tracking-widest">
+                            <label class="text-gray-300 block mb-1 font-medium">Custom Receipt Footer Message</label>
+                            <input type="text" id="setting-store-footer" title="Receipt Footer Message" placeholder="e.g. Thank you for shopping at Krupa Store! 🙏" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
                         </div>
 
-                        <div class="pt-2 flex items-center justify-between flex-wrap gap-2">
-                            <button type="submit" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold flex items-center gap-2 text-xs shadow-lg shadow-amber-600/30">
-                                <i class="fa-solid fa-key"></i> Update Security PIN
-                            </button>
-                            <button type="button" onclick="lockStoreApp()" class="px-3 py-2.5 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 rounded-xl font-semibold text-xs flex items-center gap-1.5">
-                                <i class="fa-solid fa-lock"></i> Lock App Now
+                        <div class="pt-2">
+                            <button type="submit" class="w-full sm:w-auto px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 text-xs shadow-lg shadow-brand-600/30">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Profile & Branding
                             </button>
                         </div>
                     </form>
@@ -739,8 +738,12 @@
             <!-- RECEIPT DESIGN AREA -->
             <div id="printable-receipt-area" class="p-3 sm:p-4 bg-white text-gray-900 font-sans text-xs">
                 <div class="text-center border-b border-dashed border-gray-400 pb-3 mb-3">
-                    <h2 class="text-xl font-bold font-outfit tracking-wide text-gray-900 uppercase">KRUPA STORE</h2>
-                    <p class="text-[11px] text-gray-600">Retail Fancy & Grocery Store</p>
+                    <div id="rec-logo-container" class="mb-2">
+                        <img id="rec-logo-img" src="krupa_store_logo.png" alt="Store Logo" class="max-h-16 mx-auto object-contain">
+                    </div>
+                    <h2 id="rec-store-title" class="text-xl font-bold font-outfit tracking-wide text-gray-900 uppercase">KRUPA STORE</h2>
+                    <p id="rec-store-tagline" class="text-[11px] text-gray-600">Retail Fancy & Grocery Store</p>
+                    <p id="rec-store-address" class="text-[10px] text-gray-500 mt-0.5 font-medium hidden"></p>
                     <p class="text-[10px] text-gray-500 mt-0.5" id="rec-datetime">Date: --/--/----</p>
                     <p class="text-[10px] font-mono text-gray-700 font-semibold" id="rec-bill-no">Bill #1001</p>
 
@@ -815,7 +818,7 @@
                 </div>
 
                 <div class="text-center mt-4 pt-3 border-t border-gray-200 text-[10px] text-gray-500">
-                    <p class="font-semibold text-gray-700">Thank you for shopping at Krupa Store! 🙏</p>
+                    <p id="rec-store-footer-text" class="font-semibold text-gray-700">Thank you for shopping at Krupa Store! 🙏</p>
                     <p class="mt-0.5">Please visit again!</p>
                 </div>
             </div>
