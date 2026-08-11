@@ -11,6 +11,47 @@ function getStoredData(key, fallback) {
     }
 }
 
+// Helper functions for robust Date comparisons across localized strings & timestamps
+function getBillDateObj(bill) {
+    if (bill.createdAt && typeof bill.createdAt === 'number') {
+        return new Date(bill.createdAt);
+    }
+    if (bill.date) {
+        const parsed = new Date(bill.date);
+        if (!isNaN(parsed.getTime())) return parsed;
+    }
+    return new Date();
+}
+
+function isSameDay(d1, d2) {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+}
+
+function isSameMonth(d1, d2) {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth();
+}
+
+function isWithinLast7Days(billDate, now) {
+    const startOf7DaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 0, 0, 0, 0);
+    return billDate.getTime() >= startOf7DaysAgo.getTime();
+}
+
+function isMatchingCustomDate(billDate, dateStr) {
+    if (!dateStr) return true;
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return true;
+    const targetYear = parseInt(parts[0], 10);
+    const targetMonth = parseInt(parts[1], 10) - 1;
+    const targetDay = parseInt(parts[2], 10);
+
+    return billDate.getFullYear() === targetYear &&
+           billDate.getMonth() === targetMonth &&
+           billDate.getDate() === targetDay;
+}
+
 // Default Inventory Items Data
 const DEFAULT_ITEMS = [
     { id: 1, name: 'Fancy Bangle Set', category: 'fancy', price: 150, stock: 45 },
@@ -29,6 +70,7 @@ const DEFAULT_ITEMS = [
 const DEFAULT_BILLS = [
     {
         billNo: 1000,
+        createdAt: Date.now() - 3600000 * 4,
         date: new Date(Date.now() - 3600000 * 4).toLocaleString(),
         customerName: 'Ramesh Kumar',
         customerPhone: '9876543210',
@@ -43,7 +85,8 @@ const DEFAULT_BILLS = [
     },
     {
         billNo: 999,
-        date: new Date(Date.now() - 3600000 * 24).toLocaleString(),
+        createdAt: Date.now() - 3600000 * 24 * 3,
+        date: new Date(Date.now() - 3600000 * 24 * 3).toLocaleString(),
         customerName: 'Suresh Reddy',
         customerPhone: '9812345678',
         items: [
@@ -58,7 +101,8 @@ const DEFAULT_BILLS = [
     },
     {
         billNo: 998,
-        date: new Date(Date.now() - 3600000 * 48).toLocaleString(),
+        createdAt: Date.now() - 3600000 * 24 * 10,
+        date: new Date(Date.now() - 3600000 * 24 * 10).toLocaleString(),
         customerName: 'Anitha Sharma',
         customerPhone: '9765432109',
         items: [
@@ -681,9 +725,11 @@ function checkoutBill(showReceiptModal) {
     let discount = parseFloat(document.getElementById('bill-discount')?.value) || 0;
     let grandTotal = parseFloat(document.getElementById('bill-grand-total')?.innerText || '0');
 
+    const now = new Date();
     const billData = {
         billNo: currentBillNumber,
-        date: new Date().toLocaleString(),
+        createdAt: now.getTime(),
+        date: now.toLocaleString(),
         customerName: custName,
         customerPhone: custPhone,
         items: [...currentCart],
@@ -895,28 +941,39 @@ function setDatePeriodFilter(period) {
     currentDatePeriod = period;
     currentCustomDateStr = null;
     const dateInput = document.getElementById('hist-custom-date');
-    if (dateInput) dateInput.value = '';
+    if (dateInput) {
+        dateInput.value = '';
+        dateInput.classList.remove('border-indigo-500', 'bg-indigo-900/40', 'ring-2', 'ring-indigo-500/50');
+    }
 
     document.querySelectorAll('.date-filter-btn').forEach(btn => {
-        btn.className = 'date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white';
+        btn.className = 'date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white transition';
     });
 
     const activeBtn = document.getElementById(`date-btn-${period}`);
     if (activeBtn) {
-        activeBtn.className = 'date-filter-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold shadow';
+        activeBtn.className = 'date-filter-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold shadow transition';
     }
 
     renderHistoryTable();
 }
 
 function handleCustomDateChange(dateStr) {
-    if (!dateStr) return;
+    const dateInput = document.getElementById('hist-custom-date');
+    if (!dateStr) {
+        setDatePeriodFilter('all');
+        return;
+    }
     currentDatePeriod = 'custom';
     currentCustomDateStr = dateStr;
 
     document.querySelectorAll('.date-filter-btn').forEach(btn => {
-        btn.className = 'date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white';
+        btn.className = 'date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white transition';
     });
+
+    if (dateInput) {
+        dateInput.classList.add('border-indigo-500', 'bg-indigo-900/40', 'ring-2', 'ring-indigo-500/50');
+    }
 
     renderHistoryTable();
 }
@@ -960,10 +1017,6 @@ function renderHistoryTable() {
     if (!tbody) return;
     
     const now = new Date();
-    const todayStr = now.toLocaleDateString();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const sevenDaysAgo = now.getTime() - (7 * 24 * 60 * 60 * 1000);
 
     let totalAllTime = 0;
     let todaySales = 0;
@@ -984,18 +1037,17 @@ function renderHistoryTable() {
             countPaid++;
         }
 
-        const bDate = new Date(b.date);
-        const bTime = isNaN(bDate.getTime()) ? now.getTime() : bDate.getTime();
+        const bDate = getBillDateObj(b);
 
-        if (bTime >= (now.getTime() - 24 * 3600 * 1000) || b.date.includes(todayStr)) {
+        if (isSameDay(bDate, now)) {
             todaySales += b.grandTotal;
         }
 
-        if (bTime >= sevenDaysAgo) {
+        if (isWithinLast7Days(bDate, now)) {
             weekSales += b.grandTotal;
         }
 
-        if (!isNaN(bDate.getTime()) && bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear) {
+        if (isSameMonth(bDate, now)) {
             monthSales += b.grandTotal;
         }
     });
@@ -1024,19 +1076,16 @@ function renderHistoryTable() {
             return false;
         }
 
-        const bDate = new Date(b.date);
-        const bTime = isNaN(bDate.getTime()) ? now.getTime() : bDate.getTime();
+        const bDate = getBillDateObj(b);
 
         if (currentDatePeriod === 'today') {
-            return (bTime >= (now.getTime() - 24 * 3600 * 1000) || b.date.includes(todayStr));
+            return isSameDay(bDate, now);
         } else if (currentDatePeriod === 'week') {
-            return bTime >= sevenDaysAgo;
+            return isWithinLast7Days(bDate, now);
         } else if (currentDatePeriod === 'month') {
-            return (!isNaN(bDate.getTime()) && bDate.getMonth() === currentMonth && bDate.getFullYear() === currentYear);
+            return isSameMonth(bDate, now);
         } else if (currentDatePeriod === 'custom' && currentCustomDateStr) {
-            const customDateObj = new Date(currentCustomDateStr);
-            const customStr = customDateObj.toLocaleDateString();
-            return b.date.includes(customStr) || b.date.includes(currentCustomDateStr);
+            return isMatchingCustomDate(bDate, currentCustomDateStr);
         }
 
         return true;
@@ -1210,7 +1259,11 @@ function payCustomerCreditAll(custName, custPhone) {
 }
 
 function updateHeaderStats() {
-    let todaySales = billsHistory.reduce((sum, b) => sum + b.grandTotal, 0);
+    const now = new Date();
+    let todaySales = billsHistory.reduce((sum, b) => {
+        const bDate = getBillDateObj(b);
+        return isSameDay(bDate, now) ? sum + b.grandTotal : sum;
+    }, 0);
     const headerSales = document.getElementById('header-today-sales');
     if (headerSales) headerSales.innerText = `₹${todaySales}`;
 }

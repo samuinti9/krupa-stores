@@ -410,7 +410,7 @@
 
                     <!-- Custom Single Date Picker -->
                     <div class="flex items-center gap-1 ml-auto sm:ml-2 border-l border-white/10 pl-2">
-                        <input type="date" id="hist-custom-date" title="Filter by Specific Date" aria-label="Filter by Specific Date" placeholder="Select date" onchange="handleCustomDateChange(this.value)" class="glass-input px-2 py-1 rounded-lg text-base sm:text-xs font-mono text-gray-200">
+                        <input type="date" id="hist-custom-date" title="Filter by Specific Date" aria-label="Filter by Specific Date" placeholder="Select date" onchange="handleCustomDateChange(this.value)" oninput="handleCustomDateChange(this.value)" class="glass-input px-2 py-1 rounded-lg text-base sm:text-xs font-mono text-gray-200">
                     </div>
                 </div>
             </div>
