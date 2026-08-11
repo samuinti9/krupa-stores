@@ -150,7 +150,95 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize SQLite WASM Engine
     initSQLiteDB();
+
+    // Start Real-Time PC & Mobile Sync Engine
+    fetchDataFromServerSync();
+    setInterval(() => fetchDataFromServerSync(true), 3000);
 });
+
+// ================= REAL-TIME MULTI-DEVICE SERVER SYNC ENGINE =================
+let lastServerSyncTimestamp = 0;
+let isSyncingActive = false;
+
+async function pushDataToServerSync() {
+    try {
+        const payload = {
+            items: items,
+            bills: billsHistory,
+            lastBillNo: currentBillNumber,
+            storeName: localStorage.getItem('krupa_store_name') || 'KRUPA STORE',
+            storeTagline: localStorage.getItem('krupa_store_tagline') || 'Retail Fancy & Grocery Store',
+            storePhone: localStorage.getItem('krupa_store_phone') || '',
+            storeAddress: localStorage.getItem('krupa_store_address') || '',
+            storeFooter: localStorage.getItem('krupa_store_footer') || 'Thank you for shopping at Krupa Store! 🙏',
+            storeLogo: localStorage.getItem('krupa_store_logo') || '',
+            lastModified: Date.now()
+        };
+
+        lastServerSyncTimestamp = payload.lastModified;
+
+        await fetch('/api/sync-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+    } catch (e) {
+        console.warn('Local server sync unreachable (offline mode):', e);
+    }
+}
+
+async function fetchDataFromServerSync(silent = false) {
+    if (isSyncingActive) return;
+    isSyncingActive = true;
+    try {
+        const res = await fetch('/api/sync-data?t=' + Date.now());
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.lastModified && data.lastModified > lastServerSyncTimestamp) {
+                lastServerSyncTimestamp = data.lastModified;
+
+                let hasChanges = false;
+                if (data.items && JSON.stringify(data.items) !== JSON.stringify(items)) {
+                    items = data.items;
+                    localStorage.setItem('krupa_items', JSON.stringify(items));
+                    hasChanges = true;
+                }
+
+                if (data.bills && JSON.stringify(data.bills) !== JSON.stringify(billsHistory)) {
+                    billsHistory = data.bills;
+                    localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+                    hasChanges = true;
+                }
+
+                if (data.lastBillNo && data.lastBillNo !== currentBillNumber) {
+                    currentBillNumber = data.lastBillNo;
+                    localStorage.setItem('krupa_last_bill_no', currentBillNumber.toString());
+                    const billNoEl = document.getElementById('current-bill-no');
+                    if (billNoEl) billNoEl.innerText = `Bill #${currentBillNumber}`;
+                    hasChanges = true;
+                }
+
+                if (hasChanges) {
+                    syncDataToSQLite();
+                    renderPosItems();
+                    renderItemsTable();
+                    renderHistoryTable();
+                    renderCreditCustomersTable();
+                    updateHeaderStats();
+                    if (!silent) {
+                        showToastNotification('Data synced live across devices! 🔄', 'info');
+                    }
+                }
+            } else if (data && data.status === 'empty' && billsHistory.length > 0) {
+                pushDataToServerSync();
+            }
+        }
+    } catch (e) {
+        // Offline mode fallback
+    } finally {
+        isSyncingActive = false;
+    }
+}
 
 // Scroll to Cart Summary on Mobile
 function scrollToCartSummary() {
@@ -995,6 +1083,9 @@ function checkoutBill(showReceiptModal) {
     renderHistoryTable();
     renderCreditCustomersTable();
 
+    // Trigger instant multi-device sync
+    pushDataToServerSync();
+
     if (showReceiptModal) {
         openReceiptModal(billData);
     } else {
@@ -1242,6 +1333,7 @@ function handleSaveItem(e) {
     renderItemsTable();
     renderPosItems();
     closeItemModal();
+    pushDataToServerSync();
     showToastNotification('Item catalogue updated!', 'success');
 }
 
