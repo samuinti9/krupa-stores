@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krupa-pos-v1';
+const CACHE_NAME = 'krupa-pos-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -31,6 +31,11 @@ self.addEventListener('activate', (evt) => {
 });
 
 self.addEventListener('fetch', (evt) => {
+  // Never cache API requests - Network only for multi-device sync!
+  if (evt.request.url.includes('/api/')) {
+    return;
+  }
+
   evt.respondWith(
     caches.match(evt.request).then((cachedResponse) => {
       if (cachedResponse) {

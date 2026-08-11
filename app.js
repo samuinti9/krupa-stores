@@ -130,11 +130,35 @@ async function pushDataToServerSync() {
 
         lastServerSyncTimestamp = payload.lastModified;
 
-        await fetch('/api/sync-data', {
+        const res = await fetch('/api/sync-data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+
+        if (res.ok) {
+            const merged = await res.json();
+            if (merged && merged.lastModified) {
+                lastServerSyncTimestamp = merged.lastModified;
+                if (merged.bills) {
+                    billsHistory = merged.bills;
+                    localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
+                }
+                if (merged.items) {
+                    items = merged.items;
+                    localStorage.setItem('krupa_items', JSON.stringify(items));
+                }
+                if (merged.lastBillNo) {
+                    currentBillNumber = merged.lastBillNo;
+                    localStorage.setItem('krupa_last_bill_no', currentBillNumber.toString());
+                    const billNoEl = document.getElementById('current-bill-no');
+                    if (billNoEl) billNoEl.innerText = `Bill #${currentBillNumber}`;
+                }
+                renderHistoryTable();
+                renderCreditCustomersTable();
+                updateHeaderStats();
+            }
+        }
     } catch (e) {
         console.warn('Local server sync unreachable (offline mode):', e);
     }
