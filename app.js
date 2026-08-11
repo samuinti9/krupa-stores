@@ -122,7 +122,7 @@ let billsHistory = getStoredData('krupa_bills', DEFAULT_BILLS);
 let currentCart = [];
 let currentPosFilter = 'all';
 let currentHistoryFilter = 'all';
-let currentPaymentMode = 'credit';
+let currentPaymentMode = 'cash';
 let currentBillNumber = parseInt(localStorage.getItem('krupa_last_bill_no') || '1001');
 
 let calcVal = '0';
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateClock();
     setInterval(updateClock, 1000);
-    setPaymentMode('credit');
+    setPaymentMode('cash');
     renderPosItems();
     renderItemsTable();
     renderHistoryTable();
@@ -447,21 +447,28 @@ function switchTab(tabName, skipPinCheck = false) {
 // ================= PAYMENT MODE TOGGLE =================
 function setPaymentMode(mode) {
     currentPaymentMode = mode;
-    const paidBtn = document.getElementById('pay-mode-paid');
+    const cashBtn = document.getElementById('pay-mode-cash');
+    const onlineBtn = document.getElementById('pay-mode-online');
     const creditBtn = document.getElementById('pay-mode-credit');
     const warning = document.getElementById('credit-warning-note');
     const custInput = document.getElementById('cust-name');
 
-    if (mode === 'paid') {
-        if (paidBtn) paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-emerald-600 text-white shadow';
-        if (creditBtn) creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-red-300 hover:text-white';
+    if (cashBtn) cashBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-[11px] sm:text-xs flex items-center justify-center gap-1 text-emerald-300 hover:text-white transition';
+    if (onlineBtn) onlineBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-[11px] sm:text-xs flex items-center justify-center gap-1 text-indigo-300 hover:text-white transition';
+    if (creditBtn) creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-[11px] sm:text-xs flex items-center justify-center gap-1 text-red-300 hover:text-white transition';
+
+    if (mode === 'cash') {
+        if (cashBtn) cashBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-[11px] sm:text-xs flex items-center justify-center gap-1 bg-emerald-600 text-white shadow transition';
         if (warning) warning.classList.add('hidden');
-        if (custInput) custInput.placeholder = "Customer Name (Optional)";
+        if (custInput) custInput.placeholder = "Customer Name (Optional for Cash)";
+    } else if (mode === 'online') {
+        if (onlineBtn) onlineBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-[11px] sm:text-xs flex items-center justify-center gap-1 bg-indigo-600 text-white shadow transition';
+        if (warning) warning.classList.add('hidden');
+        if (custInput) custInput.placeholder = "Customer Name (Optional for Online)";
     } else {
-        if (paidBtn) paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-emerald-300 hover:text-white';
-        if (creditBtn) creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-red-600 text-white shadow';
+        if (creditBtn) creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-[11px] sm:text-xs flex items-center justify-center gap-1 bg-red-600 text-white shadow transition';
         if (warning) warning.classList.remove('hidden');
-        if (custInput) custInput.placeholder = "Customer Name (REQUIRED for Credit)";
+        if (custInput) custInput.placeholder = "Customer Name (REQUIRED for Udhar)";
     }
 }
 
@@ -643,7 +650,7 @@ function clearBillCart() {
     if (cashGiven) cashGiven.value = '';
     const billDiscount = document.getElementById('bill-discount');
     if (billDiscount) billDiscount.value = '0';
-    setPaymentMode('credit');
+    setPaymentMode('cash');
     updateCartUI();
 }
 
@@ -774,22 +781,35 @@ function openReceiptModal(bill) {
     document.getElementById('rec-bill-no').innerText = `Bill #${bill.billNo}`;
     document.getElementById('rec-datetime').innerText = `Date: ${bill.date}`;
 
+    let statusText = '💵 CASH PAYMENT';
+    let stampStyle = 'bg-emerald-100 text-emerald-800 border-emerald-400';
     let isCredit = (bill.paymentStatus === 'credit');
+
+    if (bill.paymentStatus === 'online') {
+        statusText = '📱 ONLINE / UPI PAYMENT';
+        stampStyle = 'bg-indigo-100 text-indigo-800 border-indigo-400';
+    } else if (isCredit) {
+        statusText = '🔴 CREDIT BILL / UNPAID (KHATA)';
+        stampStyle = 'bg-red-100 text-red-700 border-red-400';
+    }
+
     const stamp = document.getElementById('rec-status-stamp');
     const proofBox = document.getElementById('rec-credit-proof-box');
     const bookStamp = document.getElementById('rec-book-noted-stamp');
     const bookBtn = document.getElementById('rec-book-toggle-btn');
 
+    if (stamp) {
+        stamp.className = `py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block ${stampStyle}`;
+        stamp.innerText = statusText;
+    }
+
     if (isCredit) {
-        if (stamp) {
-            stamp.className = 'py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block bg-red-100 text-red-700 border-red-400';
-            stamp.innerText = '🔴 CREDIT BILL / UNPAID (KHATA)';
-        }
         if (proofBox) proofBox.classList.remove('hidden');
         const proofAmt = document.getElementById('rec-credit-proof-amt');
         if (proofAmt) proofAmt.innerText = bill.grandTotal;
 
         if (bookStamp) {
+            bookStamp.classList.remove('hidden');
             if (bill.isBookNoted) {
                 bookStamp.className = 'mt-2 p-1.5 bg-emerald-100 border border-emerald-400 rounded text-center text-[10px] font-bold text-emerald-900 flex items-center justify-center gap-1';
                 document.getElementById('rec-book-noted-text').innerText = '📖 NOTED IN SHOP PHYSICAL REGISTER BOOK ✅';
@@ -806,11 +826,8 @@ function openReceiptModal(bill) {
                 : `<i class="fa-solid fa-book"></i> Mark as Noted`;
         }
     } else {
-        if (stamp) {
-            stamp.className = 'py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block bg-emerald-100 text-emerald-700 border-emerald-400';
-            stamp.innerText = '🟢 PAID BILL (CASH/ONLINE)';
-        }
         if (proofBox) proofBox.classList.add('hidden');
+        if (bookStamp) bookStamp.classList.add('hidden');
         if (bookBtn) bookBtn.classList.add('hidden');
     }
 
@@ -995,27 +1012,30 @@ function filterHistory(status) {
     if (activeBtn) {
         if (status === 'all') {
             activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow';
-        } else if (status === 'paid') {
-            activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow';
+        } else if (status === 'cash') {
+            activeBtn.className = 'hist-filter-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white shadow';
+        } else if (status === 'online') {
+            activeBtn.className = 'hist-filter-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow';
         } else if (status === 'credit') {
-            activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-600 text-white shadow';
+            activeBtn.className = 'hist-filter-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-red-600 text-white shadow';
         }
     }
     renderHistoryTable();
 }
 
-function markBillAsPaid(billNo) {
+function markBillAsPaid(billNo, payMode = 'cash') {
     const bill = billsHistory.find(b => b.billNo === billNo);
     if (!bill) return;
 
-    if (confirm(`Are you sure you want to mark Bill #${billNo} for ${bill.customerName} (₹${bill.grandTotal}) as PAID?`)) {
-        bill.paymentStatus = 'paid';
+    const modeLabel = payMode === 'online' ? 'ONLINE / UPI 📱' : 'CASH 💵';
+    if (confirm(`Mark Bill #${billNo} for ${bill.customerName} (₹${bill.grandTotal}) as PAID via ${modeLabel}?`)) {
+        bill.paymentStatus = payMode;
         localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
         syncDataToSQLite();
         renderHistoryTable();
         renderCreditCustomersTable();
         updateHeaderStats();
-        showToastNotification(`Bill #${billNo} updated to PAID!`, 'success');
+        showToastNotification(`Bill #${billNo} marked as PAID via ${modeLabel}!`, 'success');
     }
 }
 
@@ -1236,21 +1256,29 @@ function renderCreditCustomersTable() {
             <td class="px-4 py-3 text-right font-mono font-extrabold text-red-400 text-base">₹${c.totalBalance}</td>
             <td class="px-4 py-3 text-center text-xs text-gray-400">${c.lastPurchase}</td>
             <td class="px-4 py-3 text-right">
-                <button onclick="payCustomerCreditAll('${c.name.replace(/'/g, "\\'")}', '${c.phone}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition inline-flex items-center gap-1.5">
-                    <i class="fa-solid fa-circle-check"></i> Settle Udhar (₹${c.totalBalance})
-                </button>
+                <div class="flex items-center justify-end gap-1.5">
+                    <button onclick="payCustomerCreditAll('${c.name.replace(/'/g, "\\'")}', '${c.phone}', 'cash')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition inline-flex items-center gap-1">
+                        💵 Cash
+                    </button>
+                    <button onclick="payCustomerCreditAll('${c.name.replace(/'/g, "\\'")}', '${c.phone}', 'online')" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow transition inline-flex items-center gap-1">
+                        📱 Online
+                    </button>
+                </div>
             </td>
         </tr>
     `).join('');
 }
 
-function payCustomerCreditAll(custName, custPhone) {
+function payCustomerCreditAll(custName, custPhone, payMode = 'cash') {
     let matchCount = 0;
     let settledTotal = 0;
+    const modeLabel = payMode === 'online' ? 'ONLINE / UPI 📱' : 'CASH 💵';
+
+    if (!confirm(`Settle total Udhar balance for ${custName} via ${modeLabel}?`)) return;
 
     billsHistory.forEach(b => {
         if (b.paymentStatus === 'credit' && b.customerName === custName) {
-            b.paymentStatus = 'paid';
+            b.paymentStatus = payMode;
             settledTotal += b.grandTotal;
             matchCount++;
         }
@@ -1262,7 +1290,7 @@ function payCustomerCreditAll(custName, custPhone) {
         renderCreditCustomersTable();
         renderHistoryTable();
         updateHeaderStats();
-        showToastNotification(`Successfully settled ₹${settledTotal} Udhar balance for ${custName}!`, 'success');
+        showToastNotification(`Successfully settled ₹${settledTotal} Udhar balance for ${custName} via ${modeLabel}!`, 'success');
     }
 }
 
@@ -1398,8 +1426,16 @@ function exportBillsToExcel() {
         return;
     }
 
+    const payStatusMap = {
+        'cash': 'CASH 💵',
+        'online': 'ONLINE / UPI 📱',
+        'credit': 'UDHAR / KHATA 🔴',
+        'paid': 'CASH 💵'
+    };
+
     const exportData = billsHistory.map(b => {
         const itemsSummary = (b.items || []).map(i => `${i.name} (x${i.qty})`).join(', ');
+        const statusLabel = payStatusMap[b.paymentStatus] || 'CASH 💵';
         return {
             "Bill No": `#${b.billNo}`,
             "Date & Time": b.date,
@@ -1409,7 +1445,7 @@ function exportBillsToExcel() {
             "Subtotal (₹)": b.subtotal,
             "Discount (₹)": b.discount,
             "Grand Total (₹)": b.grandTotal,
-            "Payment Status": (b.paymentStatus || 'paid').toUpperCase(),
+            "Payment Method": statusLabel,
             "Noted in Book": b.isBookNoted ? 'YES' : 'NO'
         };
     });
@@ -1421,7 +1457,7 @@ function exportBillsToExcel() {
     worksheet['!cols'] = [
         { wch: 10 }, { wch: 22 }, { wch: 20 }, { wch: 15 },
         { wch: 35 }, { wch: 12 }, { wch: 12 }, { wch: 15 },
-        { wch: 15 }, { wch: 15 }
+        { wch: 18 }, { wch: 15 }
     ];
 
     const todayStr = new Date().toISOString().split('T')[0];
