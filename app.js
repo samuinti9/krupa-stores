@@ -608,22 +608,68 @@ function addToCartDirect(name, price, qty) {
     updateCartUI();
 }
 
+function formatWeightOrQty(qty) {
+    const num = parseFloat(qty);
+    if (isNaN(num)) return '1 Pcs';
+
+    if (num === 1) return '1 kg';
+    if (num === 0.5) return '500g (1/2 kg)';
+    if (num === 0.25) return '250g (1/4 kg)';
+    if (num === 0.1) return '100g';
+    if (num === 0.05) return '50g';
+
+    if (num < 1) {
+        return `${Math.round(num * 1000)}g`;
+    }
+    return `${num} kg/Pcs`;
+}
+
+function handleUnitSelect(val) {
+    const qtyInput = document.getElementById('quick-item-qty');
+    if (!qtyInput) return;
+    if (val === 'custom') {
+        qtyInput.classList.remove('hidden');
+        qtyInput.focus();
+    } else {
+        qtyInput.classList.add('hidden');
+        qtyInput.value = val;
+    }
+}
+
+function setCartItemWeight(index, weight) {
+    if (currentCart[index]) {
+        currentCart[index].qty = parseFloat(weight);
+        updateCartUI();
+    }
+}
+
 function handleQuickCustomAdd(e) {
     e.preventDefault();
     const nameInput = document.getElementById('quick-item-name');
     const priceInput = document.getElementById('quick-item-price');
+    const unitSelect = document.getElementById('quick-item-unit');
     const qtyInput = document.getElementById('quick-item-qty');
 
     const name = nameInput ? nameInput.value.trim() : '';
     const price = priceInput ? parseFloat(priceInput.value) : 0;
-    const qty = qtyInput ? parseInt(qtyInput.value) : 1;
+
+    let qty = 1;
+    if (unitSelect && unitSelect.value !== 'custom') {
+        qty = parseFloat(unitSelect.value);
+    } else if (qtyInput) {
+        qty = parseFloat(qtyInput.value) || 1;
+    }
 
     if (name && price > 0 && qty > 0) {
         addToCartDirect(name, price, qty);
         if (nameInput) nameInput.value = '';
         if (priceInput) priceInput.value = '';
-        if (qtyInput) qtyInput.value = '1';
-        showToastNotification(`Added custom item "${name}" to bill!`, 'success');
+        if (unitSelect) unitSelect.value = '1';
+        if (qtyInput) {
+            qtyInput.value = '1';
+            qtyInput.classList.add('hidden');
+        }
+        showToastNotification(`Added custom item "${name}" (${formatWeightOrQty(qty)}) to bill!`, 'success');
     }
 }
 
@@ -669,20 +715,37 @@ function updateCartUI() {
             </div>
         `;
     } else {
-        container.innerHTML = currentCart.map((item, idx) => `
-            <div class="flex items-center justify-between p-2 rounded-xl bg-gray-900/60 border border-white/5 text-xs">
-                <div class="flex-1 pr-2">
-                    <div class="font-medium text-gray-200 line-clamp-1">${item.name}</div>
-                    <div class="text-[11px] text-gray-400 font-mono">₹${item.price} x ${item.qty} = <span class="text-emerald-400 font-bold">₹${item.price * item.qty}</span></div>
+        container.innerHTML = currentCart.map((item, idx) => {
+            const itemTotal = (item.price * item.qty).toFixed(2).replace(/\.00$/, '');
+            const qStr = formatWeightOrQty(item.qty);
+
+            return `
+                <div class="p-2 rounded-xl bg-gray-900/80 border border-white/10 space-y-1.5 text-xs">
+                    <div class="flex items-center justify-between gap-1">
+                        <span class="font-semibold text-gray-100 line-clamp-1">${item.name}</span>
+                        <span class="text-emerald-400 font-mono font-bold text-sm shrink-0">₹${itemTotal}</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between gap-1 pt-1 border-t border-white/5">
+                        <!-- Quick Weight Selector Buttons -->
+                        <div class="flex items-center gap-1 overflow-x-auto text-[10px]">
+                            <button onclick="setCartItemWeight(${idx}, 1)" class="px-1.5 py-0.5 rounded font-medium transition ${item.qty === 1 ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}">1kg</button>
+                            <button onclick="setCartItemWeight(${idx}, 0.5)" class="px-1.5 py-0.5 rounded font-medium transition ${item.qty === 0.5 ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}">500g</button>
+                            <button onclick="setCartItemWeight(${idx}, 0.25)" class="px-1.5 py-0.5 rounded font-medium transition ${item.qty === 0.25 ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}">250g</button>
+                            <button onclick="setCartItemWeight(${idx}, 0.1)" class="px-1.5 py-0.5 rounded font-medium transition ${item.qty === 0.1 ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}">100g</button>
+                        </div>
+
+                        <!-- Quantity Adjuster -->
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button onclick="updateCartQty(${idx}, -1)" class="w-5 h-5 rounded bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold text-xs">-</button>
+                            <span class="font-mono font-extrabold text-xs px-1 text-indigo-300 min-w-[40px] text-center">${qStr}</span>
+                            <button onclick="updateCartQty(${idx}, 1)" class="w-5 h-5 rounded bg-gray-800 text-gray-300 hover:bg-gray-700 font-bold text-xs">+</button>
+                            <button onclick="removeCartItem(${idx})" class="w-5 h-5 rounded text-red-400 hover:bg-red-500/20 ml-0.5"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex items-center gap-1">
-                    <button onclick="updateCartQty(${idx}, -1)" class="w-5 h-5 rounded bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center justify-center font-bold text-xs">-</button>
-                    <span class="w-5 text-center font-mono font-bold text-xs">${item.qty}</span>
-                    <button onclick="updateCartQty(${idx}, 1)" class="w-5 h-5 rounded bg-gray-800 text-gray-300 hover:bg-gray-700 flex items-center justify-center font-bold text-xs">+</button>
-                    <button onclick="removeCartItem(${idx})" class="w-5 h-5 rounded text-red-400 hover:bg-red-500/20 flex items-center justify-center ml-1"><i class="fa-solid fa-trash text-[10px]"></i></button>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
     updateBillTotals();
 }
@@ -844,9 +907,9 @@ function openReceiptModal(bill) {
     document.getElementById('rec-items-list').innerHTML = bill.items.map(item => `
         <tr class="border-b border-slate-200">
             <td class="py-1.5 font-semibold text-slate-900 text-left">${item.name}</td>
-            <td class="py-1.5 text-center font-mono font-medium text-slate-800">${item.qty}</td>
+            <td class="py-1.5 text-center font-mono font-medium text-slate-800">${formatWeightOrQty(item.qty)}</td>
             <td class="py-1.5 text-right font-mono text-slate-700">₹${item.price}</td>
-            <td class="py-1.5 text-right font-mono font-bold text-slate-900">₹${item.price * item.qty}</td>
+            <td class="py-1.5 text-right font-mono font-bold text-slate-900">₹${(item.price * item.qty).toFixed(2).replace(/\.00$/, '')}</td>
         </tr>
     `).join('');
 
@@ -1436,7 +1499,7 @@ function exportBillsToExcel() {
     };
 
     const exportData = billsHistory.map(b => {
-        const itemsSummary = (b.items || []).map(i => `${i.name} (x${i.qty})`).join(', ');
+        const itemsSummary = (b.items || []).map(i => `${i.name} (${formatWeightOrQty(i.qty)})`).join(', ');
         const statusLabel = payStatusMap[b.paymentStatus] || 'CASH 💵';
         return {
             "Bill No": `#${b.billNo}`,

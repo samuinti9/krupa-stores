@@ -245,14 +245,22 @@
                             <label class="text-xs text-gray-400 block mb-1">Item Name</label>
                             <input type="text" id="quick-item-name" title="Custom Item Name" aria-label="Custom Item Name" placeholder="e.g. Loose Sugar 1kg or Ribbon" required class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm">
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="col-span-1">
                                 <label class="text-xs text-gray-400 block mb-1">Price (₹)</label>
-                                <input type="number" step="0.5" id="quick-item-price" title="Custom Item Price" aria-label="Custom Item Price" placeholder="45" required class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm">
+                                <input type="number" step="0.5" id="quick-item-price" title="Custom Item Price" aria-label="Custom Item Price" placeholder="45" required class="w-full glass-input px-2.5 py-2 rounded-xl text-base sm:text-sm">
                             </div>
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-1">Qty</label>
-                                <input type="number" id="quick-item-qty" title="Custom Item Quantity" aria-label="Custom Item Quantity" value="1" min="1" required class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm">
+                            <div class="col-span-2">
+                                <label class="text-xs text-gray-400 block mb-1">Weight / Qty</label>
+                                <select id="quick-item-unit" onchange="handleUnitSelect(this.value)" class="w-full glass-input px-2.5 py-2 rounded-xl text-base sm:text-xs bg-gray-900 text-indigo-300 font-semibold border border-indigo-500/30">
+                                    <option value="1">1 kg / 1 Pcs</option>
+                                    <option value="0.5">500g (1/2 kg)</option>
+                                    <option value="0.25">250g (1/4 kg)</option>
+                                    <option value="0.1">100g</option>
+                                    <option value="0.05">50g</option>
+                                    <option value="custom">✏️ Custom Qty...</option>
+                                </select>
+                                <input type="number" step="0.01" id="quick-item-qty" value="1" min="0.01" class="hidden w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm mt-1" placeholder="Qty or weight in kg">
                             </div>
                         </div>
                         <button type="submit" class="w-full py-2 bg-indigo-600/80 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition border border-indigo-400/30">
