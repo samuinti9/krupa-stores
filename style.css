@@ -1,10 +1,33 @@
-/* KRUPA STORE POS - LIGHT & DARK THEME SYSTEM */
+/* KRUPA STORE POS - LIGHT & DARK THEME SYSTEM & MOBILE OPTIMIZATION */
 
 /* Base Setup */
 body {
     font-family: 'Plus Jakarta Sans', sans-serif;
     min-height: 100vh;
     transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent iOS Safari Automatic Zoom on Focus by enforcing 16px minimum on mobile inputs */
+@media (max-width: 767px) {
+    input[type="text"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="password"],
+    input[type="date"],
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Hide scrollbar for clean horizontal tab scrolling */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 /* ================= ☀️ LIGHT THEME (CLEAN WHITE) ================= */
@@ -43,19 +66,19 @@ body.theme-light .text-white {
 }
 
 body.theme-light .text-gray-100 {
-    color: #1e293b !important;
+    color: #0f172a !important;
 }
 
 body.theme-light .text-gray-200 {
-    color: #334155 !important;
+    color: #1e293b !important;
 }
 
 body.theme-light .text-gray-300 {
-    color: #475569 !important;
+    color: #334155 !important;
 }
 
 body.theme-light .text-gray-400 {
-    color: #64748b !important;
+    color: #475569 !important;
 }
 
 body.theme-light .bg-gray-900\/60,
@@ -157,12 +180,14 @@ body.theme-dark thead.bg-gray-900\/80 {
     transition: transform 0.1s ease, background-color 0.15s ease, box-shadow 0.15s ease;
     -webkit-user-select: none;
     user-select: none;
+    touch-action: manipulation;
 }
 .calc-btn:hover { transform: translateY(-1px); }
 .calc-btn:active { transform: scale(0.95) translateY(1px); }
 
 .pos-item-card {
     transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    touch-action: manipulation;
 }
 .pos-item-card:hover {
     transform: translateY(-2px);

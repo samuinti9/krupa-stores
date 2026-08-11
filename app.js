@@ -1,4 +1,15 @@
-// KRUPA STORE POS - MAIN APPLICATION JAVASCRIPT ENGINE
+// KRUPA STORE POS - MAIN APPLICATION ENGINE (LOCAL & MOBILE OPTIMIZED)
+
+// Safe LocalStorage Reader with Error Fallback
+function getStoredData(key, fallback) {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+    } catch (e) {
+        console.warn(`Error reading ${key} from localStorage:`, e);
+        return fallback;
+    }
+}
 
 // Default Inventory Items Data
 const DEFAULT_ITEMS = [
@@ -62,236 +73,30 @@ const DEFAULT_BILLS = [
 ];
 
 // App State Management
-let items = JSON.parse(localStorage.getItem('krupa_items')) || DEFAULT_ITEMS;
-let billsHistory = JSON.parse(localStorage.getItem('krupa_bills')) || DEFAULT_BILLS;
+let items = getStoredData('krupa_items', DEFAULT_ITEMS);
+let billsHistory = getStoredData('krupa_bills', DEFAULT_BILLS);
 let currentCart = [];
 let currentPosFilter = 'all';
 let currentHistoryFilter = 'all';
 let currentPaymentMode = 'credit';
 let currentBillNumber = parseInt(localStorage.getItem('krupa_last_bill_no') || '1001');
 
-// ================= FIREBASE CLOUD DATABASE ENGINE (FIRESTORE + OFFLINE MOBILE PERSISTENCE) =================
-let db = null;
-let isFirebaseConnected = false;
-
-function initFirebaseDatabase() {
-    try {
-        if (typeof firebase !== 'undefined') {
-            const savedConfigStr = localStorage.getItem('krupa_firebase_config');
-            if (!savedConfigStr) {
-                console.info('Firebase Cloud credentials not configured yet. Operating in local mobile storage mode.');
-                updateFirebaseBadge(false, 'Local Mobile DB 📱');
-                return;
-            }
-
-            const config = JSON.parse(savedConfigStr);
-            if (!config.apiKey || !config.projectId) {
-                updateFirebaseBadge(false, 'Local Mobile DB 📱');
-                return;
-            }
-
-            if (!firebase.apps.length) {
-                firebase.initializeApp(config);
-            }
-
-            db = firebase.firestore();
-
-            // Enable offline persistence for mobile phone execution
-            db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-                console.warn('Firestore offline persistence info:', err.code);
-            });
-
-            isFirebaseConnected = true;
-            updateFirebaseBadge(true, 'Cloud DB Active ☁️');
-            listenToFirebaseCollections();
-        } else {
-            console.warn('Firebase SDK not loaded. Operating in local mobile storage mode.');
-            updateFirebaseBadge(false, 'Local Mobile DB 📱');
-        }
-    } catch (e) {
-        console.warn('Firebase init fallback to local mobile storage:', e);
-        updateFirebaseBadge(false, 'Local Mobile DB 📱');
-    }
-}
-
-function updateFirebaseBadge(connected, message) {
-    const badge = document.getElementById('firebase-sync-status');
-    const text = document.getElementById('firebase-sync-text');
-    const settingBadge = document.getElementById('setting-firebase-status-badge');
-
-    if (badge && text) {
-        if (connected) {
-            badge.className = 'flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm';
-            text.innerText = message || 'Cloud DB Active ☁️';
-        } else {
-            badge.className = 'flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm';
-            text.innerText = message || 'Local Mobile DB 📱';
-        }
-    }
-
-    if (settingBadge) {
-        if (connected) {
-            settingBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-            settingBadge.innerText = '☁️ Cloud DB Connected';
-        } else {
-            settingBadge.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30';
-            settingBadge.innerText = '📱 Local Mobile DB Active';
-        }
-    }
-}
-
-function handleSaveFirebaseConfig(e) {
-    e.preventDefault();
-    const apiKey = document.getElementById('fb-config-apikey').value.trim();
-    const projectId = document.getElementById('fb-config-projectid').value.trim();
-    const authDomain = document.getElementById('fb-config-authdomain').value.trim();
-    const appId = document.getElementById('fb-config-appid').value.trim();
-
-    if (!apiKey || !projectId) {
-        showToastNotification('⚠️ API Key and Project ID are required for Firebase Cloud connection!', 'warning');
-        return;
-    }
-
-    const config = {
-        apiKey,
-        projectId,
-        authDomain: authDomain || `${projectId}.firebaseapp.com`,
-        storageBucket: `${projectId}.appspot.com`,
-        messagingSenderId: "109876543210",
-        appId: appId || "1:109876543210:web:abcdef1234567890"
-    };
-
-    localStorage.setItem('krupa_firebase_config', JSON.stringify(config));
-    showToastNotification('Firebase Cloud Configuration saved! Connecting...', 'info');
-
-    try {
-        if (firebase.apps.length) {
-            firebase.app().delete().then(() => {
-                initFirebaseDatabase();
-                syncLocalToCloudDB();
-            }).catch(() => {
-                initFirebaseDatabase();
-                syncLocalToCloudDB();
-            });
-        } else {
-            initFirebaseDatabase();
-            syncLocalToCloudDB();
-        }
-    } catch (err) {
-        console.warn('Re-init error:', err);
-    }
-}
-
-function syncLocalToCloudDB() {
-    if (!db || !isFirebaseConnected) {
-        showToastNotification('Please configure and connect Firebase Cloud DB first!', 'warning');
-        return;
-    }
-
-    billsHistory.forEach(bill => {
-        db.collection('krupa_bills').doc(bill.billNo.toString()).set(bill, { merge: true }).catch(err => console.warn('Cloud sync error for bill:', err));
-    });
-
-    items.forEach(item => {
-        db.collection('krupa_items').doc(item.id.toString()).set(item, { merge: true }).catch(err => console.warn('Cloud sync error for item:', err));
-    });
-
-    showToastNotification('☁️ Syncing all local bills and items to Cloud Database...', 'success');
-}
-
-function listenToFirebaseCollections() {
-    if (!db) return;
-
-    // Real-time Firestore sync for Bills
-    db.collection('krupa_bills').onSnapshot(snapshot => {
-        if (!snapshot.empty) {
-            const cloudBills = [];
-            snapshot.forEach(doc => {
-                cloudBills.push(doc.data());
-            });
-            if (cloudBills.length > 0) {
-                cloudBills.sort((a, b) => b.billNo - a.billNo);
-                billsHistory = cloudBills;
-                localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
-                renderHistoryTable();
-                renderCreditCustomersTable();
-                updateHeaderStats();
-            }
-        }
-    }, err => {
-        console.warn('Firestore Bills listener offline:', err);
-    });
-
-    // Real-time Firestore sync for Inventory Items
-    db.collection('krupa_items').onSnapshot(snapshot => {
-        if (!snapshot.empty) {
-            const cloudItems = [];
-            snapshot.forEach(doc => {
-                cloudItems.push(doc.data());
-            });
-            if (cloudItems.length > 0) {
-                cloudItems.sort((a, b) => a.id - b.id);
-                items = cloudItems;
-                localStorage.setItem('krupa_items', JSON.stringify(items));
-                renderPosItems();
-                renderItemsTable();
-            }
-        }
-    }, err => {
-        console.warn('Firestore Items listener offline:', err);
-    });
-}
-
-function saveBillToFirebase(billData) {
-    if (db && isFirebaseConnected) {
-        db.collection('krupa_bills').doc(billData.billNo.toString()).set(billData).catch(err => {
-            console.warn('Firestore bill save queued offline:', err);
-        });
-    }
-}
-
-function updateBillInFirebase(billData) {
-    if (db && isFirebaseConnected) {
-        db.collection('krupa_bills').doc(billData.billNo.toString()).set(billData, { merge: true }).catch(err => {
-            console.warn('Firestore bill update queued offline:', err);
-        });
-    }
-}
-
-function saveItemToFirebase(itemData) {
-    if (db && isFirebaseConnected) {
-        db.collection('krupa_items').doc(itemData.id.toString()).set(itemData).catch(err => {
-            console.warn('Firestore item save queued offline:', err);
-        });
-    }
-}
-
-function deleteItemFromFirebase(itemId) {
-    if (db && isFirebaseConnected) {
-        db.collection('krupa_items').doc(itemId.toString()).delete().catch(err => {
-            console.warn('Firestore item delete queued offline:', err);
-        });
-    }
-}
-
 let calcVal = '0';
 let calcExp = '';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize Firebase Database Engine for Mobile Phone POS
-    initFirebaseDatabase();
-
     // Restore saved theme mode (Light vs Dark)
     const savedThemeMode = localStorage.getItem('krupa_theme_mode') || 'light';
     setThemeMode(savedThemeMode);
 
     // Load store profile settings if present
-    const profile = JSON.parse(localStorage.getItem('krupa_store_profile')) || {
+    const profile = getStoredData('krupa_store_profile', {
         name: 'Krupa Store',
         tagline: 'Retail Fancy & Grocery Store',
         phone: '+91 9876543210',
         address: 'Main Market Road'
-    };
+    });
+
     if (document.getElementById('setting-store-name')) {
         document.getElementById('setting-store-name').value = profile.name;
         document.getElementById('setting-store-tagline').value = profile.tagline;
@@ -307,8 +112,18 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistoryTable();
     renderCreditCustomersTable();
     updateHeaderStats();
-    document.getElementById('current-bill-no').innerText = `Bill #${currentBillNumber}`;
+    updateCartUI();
+    const billNoEl = document.getElementById('current-bill-no');
+    if (billNoEl) billNoEl.innerText = `Bill #${currentBillNumber}`;
 });
+
+// Scroll to Cart Summary on Mobile
+function scrollToCartSummary() {
+    const cartEl = document.getElementById('cart-summary-section');
+    if (cartEl) {
+        cartEl.scrollIntoView({ behavior: 'smooth' });
+    }
+}
 
 // Theme Mode Handler (Light vs Dark)
 function setThemeMode(mode) {
@@ -334,14 +149,6 @@ function setThemeMode(mode) {
         }
     }
 }
-
-// Interactive Cursor Follower Spotlight
-document.addEventListener('mousemove', (e) => {
-    const spotlight = document.getElementById('cursor-spotlight');
-    if (spotlight) {
-        spotlight.style.transform = `translate(${e.clientX - 192}px, ${e.clientY - 192}px)`;
-    }
-});
 
 // SLEEK NON-BLOCKING TOAST NOTIFICATION ENGINE
 function showToastNotification(msg, type = 'success') {
@@ -377,7 +184,7 @@ function handleSaveStoreProfile(e) {
         address: document.getElementById('setting-store-address').value
     };
     localStorage.setItem('krupa_store_profile', JSON.stringify(profile));
-    showToastNotification('Store settings saved successfully!', 'success');
+    showToastNotification('Store profile settings saved successfully!', 'success');
 }
 
 function exportSystemData() {
@@ -420,10 +227,10 @@ function importSystemData(e) {
             if (data.themeMode) {
                 localStorage.setItem('krupa_theme_mode', data.themeMode);
             }
-            alert('Data restored successfully!');
-            location.reload();
+            showToastNotification('Data restored successfully!', 'success');
+            setTimeout(() => location.reload(), 800);
         } catch (err) {
-            alert('Invalid backup JSON file.');
+            showToastNotification('Invalid backup JSON file.', 'error');
         }
     };
     reader.readAsText(file);
@@ -434,8 +241,9 @@ function clearHistoryData() {
         billsHistory = [];
         localStorage.removeItem('krupa_bills');
         renderHistoryTable();
+        renderCreditCustomersTable();
         updateHeaderStats();
-        alert('Sales history cleared!');
+        showToastNotification('Sales history cleared!', 'info');
     }
 }
 
@@ -445,41 +253,7 @@ function resetItemsToDefault() {
         localStorage.setItem('krupa_items', JSON.stringify(items));
         renderPosItems();
         renderItemsTable();
-        alert('Catalogue reset to defaults!');
-    }
-}
-
-// ================= JS INTERACTIVE BACKGROUND CANVAS =================
-let canvas, ctx, particles = [];
-let particleColor = 'rgba(99, 102, 241, 0.4)';
-
-function initParticleCanvas() {
-    canvas = document.getElementById('particle-canvas');
-    if (!canvas) return;
-    ctx = canvas.getContext('2d');
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    createParticles();
-    animateParticles();
-}
-
-function resizeCanvas() {
-    if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-
-function createParticles() {
-    particles = [];
-    const count = Math.floor(window.innerWidth / 30);
-    for (let i = 0; i < count; i++) {
-        particles.push({
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
-            radius: Math.random() * 2 + 1,
-            vx: (Math.random() - 0.5) * 0.4,
-            vy: (Math.random() - 0.5) * 0.4
-        });
+        showToastNotification('Catalogue reset to defaults!', 'success');
     }
 }
 
@@ -487,7 +261,7 @@ function createParticles() {
 function triggerCheckoutCelebration() {
     const container = document.body;
     const colors = ['#6366f1', '#10b981', '#ec4899', '#f59e0b', '#3b82f6'];
-    for (let i = 0; i < 35; i++) {
+    for (let i = 0; i < 30; i++) {
         const spark = document.createElement('div');
         spark.className = 'fixed pointer-events-none z-50 rounded-full animate-pop-in';
         const size = Math.random() * 8 + 4;
@@ -509,41 +283,6 @@ function triggerCheckoutCelebration() {
     }
 }
 
-function animateParticles() {
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (let i = 0; i < particles.length; i++) {
-        let p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = particleColor;
-        ctx.fill();
-
-        for (let j = i + 1; j < particles.length; j++) {
-            let p2 = particles[j];
-            let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-            if (dist < 100) {
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.strokeStyle = particleColor.replace(/[\d\.]+\)$/, `${(1 - dist / 100) * 0.15})`);
-                ctx.lineWidth = 0.5;
-                ctx.stroke();
-            }
-        }
-    }
-    requestAnimationFrame(animateParticles);
-}
-
 // ================= MASTER PIN SECURITY ENGINE =================
 let masterPin = localStorage.getItem('krupa_master_pin') || '1234';
 let isPinRequired = localStorage.getItem('krupa_pin_required') === 'true';
@@ -555,14 +294,14 @@ function lockStoreApp() {
     isStoreUnlocked = false;
     currentEnteredPin = '';
     updatePinDisplay();
-    document.getElementById('pin-error-msg').classList.add('hidden');
-    document.getElementById('security-lock-modal').classList.remove('hidden');
+    document.getElementById('pin-error-msg')?.classList.add('hidden');
+    document.getElementById('security-lock-modal')?.classList.remove('hidden');
     showToastNotification('🔒 Store App locked with Master PIN', 'info');
 }
 
 function unlockStoreApp() {
     isStoreUnlocked = true;
-    document.getElementById('security-lock-modal').classList.add('hidden');
+    document.getElementById('security-lock-modal')?.classList.add('hidden');
     showToastNotification('🔓 Admin mode unlocked!', 'success');
     if (pendingUnlockTargetTab) {
         switchTab(pendingUnlockTargetTab, true);
@@ -583,7 +322,7 @@ function pressPinNum(digit) {
 function clearPinInput() {
     currentEnteredPin = '';
     updatePinDisplay();
-    document.getElementById('pin-error-msg').classList.add('hidden');
+    document.getElementById('pin-error-msg')?.classList.add('hidden');
 }
 
 function updatePinDisplay() {
@@ -599,7 +338,7 @@ function submitPinUnlock() {
     if (currentEnteredPin === masterPin) {
         unlockStoreApp();
     } else {
-        document.getElementById('pin-error-msg').classList.remove('hidden');
+        document.getElementById('pin-error-msg')?.classList.remove('hidden');
         currentEnteredPin = '';
         updatePinDisplay();
     }
@@ -630,17 +369,17 @@ function updateClock() {
 function switchTab(tabName, skipPinCheck = false) {
     if (isPinRequired && !isStoreUnlocked && ['history', 'customers', 'items', 'settings'].includes(tabName) && !skipPinCheck) {
         pendingUnlockTargetTab = tabName;
-        document.getElementById('pin-error-msg').classList.add('hidden');
+        document.getElementById('pin-error-msg')?.classList.add('hidden');
         currentEnteredPin = '';
         updatePinDisplay();
-        document.getElementById('security-lock-modal').classList.remove('hidden');
+        document.getElementById('security-lock-modal')?.classList.remove('hidden');
         showToastNotification('🔒 Master PIN required to access admin tab', 'warning');
         return;
     }
 
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.className = 'tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition text-slate-300 hover:text-white hover:bg-slate-800';
+        btn.className = 'tab-btn px-3 py-2 rounded-lg font-medium text-xs sm:text-sm flex items-center gap-1.5 transition text-slate-300 hover:text-white hover:bg-slate-800 shrink-0';
     });
 
     const targetTab = document.getElementById(`tab-${tabName}`);
@@ -648,7 +387,7 @@ function switchTab(tabName, skipPinCheck = false) {
 
     const activeBtn = document.getElementById(`tab-btn-${tabName}`);
     if (activeBtn) {
-        activeBtn.className = 'tab-btn px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition bg-indigo-600 text-white shadow';
+        activeBtn.className = 'tab-btn px-3 py-2 rounded-lg font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition bg-indigo-600 text-white shadow shrink-0';
     }
 
     if (tabName === 'history') {
@@ -667,13 +406,13 @@ function setPaymentMode(mode) {
     const custInput = document.getElementById('cust-name');
 
     if (mode === 'paid') {
-        paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-emerald-600 text-white shadow';
-        creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-red-300 hover:text-white';
+        if (paidBtn) paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-emerald-600 text-white shadow';
+        if (creditBtn) creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-red-300 hover:text-white';
         if (warning) warning.classList.add('hidden');
         if (custInput) custInput.placeholder = "Customer Name (Optional)";
     } else {
-        paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-emerald-300 hover:text-white';
-        creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-red-600 text-white shadow';
+        if (paidBtn) paidBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 text-emerald-300 hover:text-white';
+        if (creditBtn) creditBtn.className = 'pay-mode-btn py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 bg-red-600 text-white shadow';
         if (warning) warning.classList.remove('hidden');
         if (custInput) custInput.placeholder = "Customer Name (REQUIRED for Credit)";
     }
@@ -725,9 +464,13 @@ function calcEqual() {
 }
 
 function updateCalcDisplay() {
-    document.getElementById('calc-display').innerText = calcVal;
-    document.getElementById('calc-expression').innerText = calcExp;
-    document.getElementById('calc-add-val').innerText = isNaN(parseFloat(calcVal)) ? '0' : calcVal;
+    const disp = document.getElementById('calc-display');
+    const exp = document.getElementById('calc-expression');
+    const addVal = document.getElementById('calc-add-val');
+
+    if (disp) disp.innerText = calcVal;
+    if (exp) exp.innerText = calcExp;
+    if (addVal) addVal.innerText = isNaN(parseFloat(calcVal)) ? '0' : calcVal;
 }
 
 function addCalcResultToBill() {
@@ -736,7 +479,7 @@ function addCalcResultToBill() {
         showToastNotification('Please calculate a valid amount first', 'warning');
         return;
     }
-    addToCartDirect('Calc Quick Item', amount, 1);
+    addToCartDirect('Quick Custom Item', amount, 1);
     calcClear();
 }
 
@@ -744,9 +487,10 @@ function addCalcResultToBill() {
 function setPosFilter(filter) {
     currentPosFilter = filter;
     document.querySelectorAll('.pos-filter-btn').forEach(btn => {
-        btn.className = 'pos-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white';
+        btn.className = 'pos-filter-btn px-3 py-1 rounded-lg text-gray-400 hover:text-white';
     });
-    document.getElementById(`filter-${filter}`).className = 'pos-filter-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-medium';
+    const filterBtn = document.getElementById(`filter-${filter}`);
+    if (filterBtn) filterBtn.className = 'pos-filter-btn px-3 py-1 rounded-lg bg-indigo-600 text-white font-medium';
     renderPosItems();
 }
 
@@ -763,13 +507,13 @@ function renderPosItems() {
     });
 
     grid.innerHTML = filtered.map(item => `
-        <div onclick="addItemToCart(${item.id})" class="glass-card p-3 rounded-2xl border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-900/20 cursor-pointer transition flex flex-col justify-between h-28 group">
+        <div onclick="addItemToCart(${item.id})" class="pos-item-card glass-card p-2.5 sm:p-3 rounded-2xl border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-900/20 cursor-pointer transition flex flex-col justify-between h-24 sm:h-28 group">
             <div class="flex items-start justify-between gap-1">
                 <span class="font-semibold text-xs text-gray-100 group-hover:text-indigo-300 line-clamp-2">${item.name}</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded ${item.category === 'fancy' ? 'bg-pink-500/20 text-pink-300' : 'bg-emerald-500/20 text-emerald-300'} font-medium capitalize">${item.category}</span>
+                <span class="text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded ${item.category === 'fancy' ? 'bg-pink-500/20 text-pink-300' : 'bg-emerald-500/20 text-emerald-300'} font-medium capitalize shrink-0">${item.category}</span>
             </div>
-            <div class="flex items-end justify-between mt-2">
-                <div class="text-sm font-bold font-mono text-emerald-400">₹${item.price}</div>
+            <div class="flex items-end justify-between mt-1.5">
+                <div class="text-xs sm:text-sm font-bold font-mono text-emerald-400">₹${item.price}</div>
                 <button class="w-6 h-6 rounded-lg bg-indigo-600/80 group-hover:bg-indigo-500 text-white flex items-center justify-center text-xs shadow">
                     <i class="fa-solid fa-plus"></i>
                 </button>
@@ -794,7 +538,7 @@ function addItemToCart(itemId) {
             isCustom: false
         });
     }
-    renderCart();
+    updateCartUI();
 }
 
 function addToCartDirect(name, price, qty) {
@@ -805,20 +549,25 @@ function addToCartDirect(name, price, qty) {
         qty: qty,
         isCustom: true
     });
-    renderCart();
+    updateCartUI();
 }
 
 function handleQuickCustomAdd(e) {
     e.preventDefault();
-    const name = document.getElementById('quick-item-name').value;
-    const price = parseFloat(document.getElementById('quick-item-price').value);
-    const qty = parseInt(document.getElementById('quick-item-qty').value);
+    const nameInput = document.getElementById('quick-item-name');
+    const priceInput = document.getElementById('quick-item-price');
+    const qtyInput = document.getElementById('quick-item-qty');
+
+    const name = nameInput ? nameInput.value.trim() : '';
+    const price = priceInput ? parseFloat(priceInput.value) : 0;
+    const qty = qtyInput ? parseInt(qtyInput.value) : 1;
 
     if (name && price > 0 && qty > 0) {
         addToCartDirect(name, price, qty);
-        document.getElementById('quick-item-name').value = '';
-        document.getElementById('quick-item-price').value = '';
-        document.getElementById('quick-item-qty').value = '1';
+        if (nameInput) nameInput.value = '';
+        if (priceInput) priceInput.value = '';
+        if (qtyInput) qtyInput.value = '1';
+        showToastNotification(`Added custom item "${name}" to bill!`, 'success');
     }
 }
 
@@ -829,34 +578,38 @@ function updateCartQty(index, change) {
             currentCart.splice(index, 1);
         }
     }
-    renderCart();
+    updateCartUI();
 }
 
 function removeCartItem(index) {
     currentCart.splice(index, 1);
-    renderCart();
+    updateCartUI();
 }
 
 function clearBillCart() {
     currentCart = [];
-    document.getElementById('cust-name').value = '';
-    document.getElementById('cust-phone').value = '';
-    document.getElementById('cash-given').value = '';
-    document.getElementById('bill-discount').value = '0';
+    const custName = document.getElementById('cust-name');
+    if (custName) custName.value = '';
+    const custPhone = document.getElementById('cust-phone');
+    if (custPhone) custPhone.value = '';
+    const cashGiven = document.getElementById('cash-given');
+    if (cashGiven) cashGiven.value = '';
+    const billDiscount = document.getElementById('bill-discount');
+    if (billDiscount) billDiscount.value = '0';
     setPaymentMode('credit');
-    renderCart();
+    updateCartUI();
 }
 
-function renderCart() {
+function updateCartUI() {
     const container = document.getElementById('cart-items-container');
     if (!container) return;
 
     if (currentCart.length === 0) {
         container.innerHTML = `
-            <div id="empty-cart-msg" class="py-8 text-center text-gray-500">
-                <i class="fa-solid fa-basket-shopping text-3xl mb-2 text-gray-600 block"></i>
+            <div id="empty-cart-msg" class="py-6 text-center text-gray-500">
+                <i class="fa-solid fa-basket-shopping text-2xl mb-1 text-gray-600 block"></i>
                 <p class="text-xs">No items in bill yet.</p>
-                <p class="text-[11px] text-gray-600 mt-1">Click an item or use calculator/custom input</p>
+                <p class="text-[11px] text-gray-500 mt-0.5">Click items above or use calculator</p>
             </div>
         `;
     } else {
@@ -880,19 +633,30 @@ function renderCart() {
 
 function updateBillTotals() {
     let subtotal = currentCart.reduce((sum, i) => sum + (i.price * i.qty), 0);
-    let discount = parseFloat(document.getElementById('bill-discount').value) || 0;
+    let discount = parseFloat(document.getElementById('bill-discount')?.value) || 0;
     let grandTotal = Math.max(0, subtotal - discount);
 
-    document.getElementById('bill-subtotal').innerText = subtotal;
-    document.getElementById('bill-grand-total').innerText = grandTotal;
+    const subEl = document.getElementById('bill-subtotal');
+    const grandEl = document.getElementById('bill-grand-total');
+    const mobileCountEl = document.getElementById('mobile-cart-count');
+    const mobileTotalEl = document.getElementById('mobile-cart-total');
+
+    if (subEl) subEl.innerText = subtotal;
+    if (grandEl) grandEl.innerText = grandTotal;
+    
+    let totalQty = currentCart.reduce((sum, i) => sum + i.qty, 0);
+    if (mobileCountEl) mobileCountEl.innerText = totalQty;
+    if (mobileTotalEl) mobileTotalEl.innerText = grandTotal;
+
     calculateChange();
 }
 
 function calculateChange() {
-    let grandTotal = parseFloat(document.getElementById('bill-grand-total').innerText) || 0;
-    let cashGiven = parseFloat(document.getElementById('cash-given').value) || 0;
+    let grandTotal = parseFloat(document.getElementById('bill-grand-total')?.innerText) || 0;
+    let cashGiven = parseFloat(document.getElementById('cash-given')?.value) || 0;
     let change = cashGiven > grandTotal ? cashGiven - grandTotal : 0;
-    document.getElementById('cash-change').innerText = `₹${change}`;
+    const changeEl = document.getElementById('cash-change');
+    if (changeEl) changeEl.innerText = `₹${change}`;
 }
 
 // CHECKOUT & BILL GENERATION
@@ -902,21 +666,20 @@ function checkoutBill(showReceiptModal) {
         return;
     }
 
-    let custName = document.getElementById('cust-name').value.trim();
-    let custPhone = document.getElementById('cust-phone').value.trim();
+    let custName = (document.getElementById('cust-name')?.value || '').trim();
+    let custPhone = (document.getElementById('cust-phone')?.value || '').trim();
 
     if (currentPaymentMode === 'credit' && !custName) {
-        showToastNotification('⚠️ Customer Name is required for Credit (Udhar) Bills as proof!', 'warning');
-        document.getElementById('cust-name').focus();
+        showToastNotification('⚠️ Customer Name is required for Credit (Udhar) Bills!', 'warning');
+        document.getElementById('cust-name')?.focus();
         return;
     }
 
     if (!custName) custName = 'Walk-in Customer';
 
-    let subtotal = parseFloat(document.getElementById('bill-subtotal').innerText);
-    let discount = parseFloat(document.getElementById('bill-discount').value) || 0;
-    let grandTotal = parseFloat(document.getElementById('bill-grand-total').innerText);
-    const isBookNotedVal = (currentPaymentMode === 'credit' && document.getElementById('check-book-noted')?.checked) || false;
+    let subtotal = parseFloat(document.getElementById('bill-subtotal')?.innerText || '0');
+    let discount = parseFloat(document.getElementById('bill-discount')?.value) || 0;
+    let grandTotal = parseFloat(document.getElementById('bill-grand-total')?.innerText || '0');
 
     const billData = {
         billNo: currentBillNumber,
@@ -928,16 +691,16 @@ function checkoutBill(showReceiptModal) {
         discount: discount,
         grandTotal: grandTotal,
         paymentStatus: currentPaymentMode,
-        isBookNoted: isBookNotedVal
+        isBookNoted: false
     };
 
     billsHistory.unshift(billData);
     localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
-    saveBillToFirebase(billData);
     
     currentBillNumber++;
     localStorage.setItem('krupa_last_bill_no', currentBillNumber.toString());
-    document.getElementById('current-bill-no').innerText = `Bill #${currentBillNumber}`;
+    const billNoEl = document.getElementById('current-bill-no');
+    if (billNoEl) billNoEl.innerText = `Bill #${currentBillNumber}`;
 
     updateHeaderStats();
     renderHistoryTable();
@@ -950,16 +713,6 @@ function checkoutBill(showReceiptModal) {
     }
 
     clearBillCart();
-}
-
-function clearBillCart() {
-    currentCart = [];
-    document.getElementById('cust-name').value = '';
-    document.getElementById('cust-phone').value = '';
-    document.getElementById('bill-discount').value = '0';
-    const checkBook = document.getElementById('check-book-noted');
-    if (checkBook) checkBook.checked = false;
-    updateCartUI();
 }
 
 let currentOpenReceiptBillNo = null;
@@ -978,10 +731,13 @@ function openReceiptModal(bill) {
     const bookBtn = document.getElementById('rec-book-toggle-btn');
 
     if (isCredit) {
-        stamp.className = 'py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block bg-red-100 text-red-700 border-red-400';
-        stamp.innerText = '🔴 CREDIT BILL / UNPAID (KHATA)';
-        proofBox.classList.remove('hidden');
-        document.getElementById('rec-credit-proof-amt').innerText = bill.grandTotal;
+        if (stamp) {
+            stamp.className = 'py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block bg-red-100 text-red-700 border-red-400';
+            stamp.innerText = '🔴 CREDIT BILL / UNPAID (KHATA)';
+        }
+        if (proofBox) proofBox.classList.remove('hidden');
+        const proofAmt = document.getElementById('rec-credit-proof-amt');
+        if (proofAmt) proofAmt.innerText = bill.grandTotal;
 
         if (bookStamp) {
             if (bill.isBookNoted) {
@@ -1000,18 +756,20 @@ function openReceiptModal(bill) {
                 : `<i class="fa-solid fa-book"></i> Mark as Noted`;
         }
     } else {
-        stamp.className = 'py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block bg-emerald-100 text-emerald-700 border-emerald-400';
-        stamp.innerText = '🟢 PAID BILL (CASH/ONLINE)';
-        proofBox.classList.add('hidden');
+        if (stamp) {
+            stamp.className = 'py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block bg-emerald-100 text-emerald-700 border-emerald-400';
+            stamp.innerText = '🟢 PAID BILL (CASH/ONLINE)';
+        }
+        if (proofBox) proofBox.classList.add('hidden');
         if (bookBtn) bookBtn.classList.add('hidden');
     }
 
     if (bill.customerName !== 'Walk-in Customer' || bill.customerPhone) {
-        document.getElementById('rec-customer-box').classList.remove('hidden');
+        document.getElementById('rec-customer-box')?.classList.remove('hidden');
         document.getElementById('rec-cust-name').innerText = bill.customerName;
         document.getElementById('rec-cust-phone').innerText = bill.customerPhone || 'N/A';
     } else {
-        document.getElementById('rec-customer-box').classList.add('hidden');
+        document.getElementById('rec-customer-box')?.classList.add('hidden');
     }
 
     document.getElementById('rec-items-list').innerHTML = bill.items.map(item => `
@@ -1025,14 +783,14 @@ function openReceiptModal(bill) {
 
     document.getElementById('rec-subtotal').innerText = bill.subtotal;
     if (bill.discount > 0) {
-        document.getElementById('rec-discount-row').classList.remove('hidden');
+        document.getElementById('rec-discount-row')?.classList.remove('hidden');
         document.getElementById('rec-discount').innerText = bill.discount;
     } else {
-        document.getElementById('rec-discount-row').classList.add('hidden');
+        document.getElementById('rec-discount-row')?.classList.add('hidden');
     }
     document.getElementById('rec-grandtotal').innerText = bill.grandTotal;
 
-    document.getElementById('receipt-modal').classList.remove('hidden');
+    document.getElementById('receipt-modal')?.classList.remove('hidden');
 }
 
 function toggleCurrentReceiptBookNoted() {
@@ -1042,7 +800,7 @@ function toggleCurrentReceiptBookNoted() {
 }
 
 function closeReceiptModal() {
-    document.getElementById('receipt-modal').classList.add('hidden');
+    document.getElementById('receipt-modal')?.classList.add('hidden');
 }
 
 // ================= ITEM MANAGEMENT MODAL =================
@@ -1076,7 +834,7 @@ function openAddItemModal() {
     document.getElementById('modal-item-cat').value = 'fancy';
     document.getElementById('modal-item-price').value = '';
     document.getElementById('modal-item-stock').value = '100';
-    document.getElementById('item-modal').classList.remove('hidden');
+    document.getElementById('item-modal')?.classList.remove('hidden');
 }
 
 function openEditItemModal(id) {
@@ -1088,11 +846,11 @@ function openEditItemModal(id) {
     document.getElementById('modal-item-cat').value = item.category;
     document.getElementById('modal-item-price').value = item.price;
     document.getElementById('modal-item-stock').value = item.stock;
-    document.getElementById('item-modal').classList.remove('hidden');
+    document.getElementById('item-modal')?.classList.remove('hidden');
 }
 
 function closeItemModal() {
-    document.getElementById('item-modal').classList.add('hidden');
+    document.getElementById('item-modal')?.classList.add('hidden');
 }
 
 function handleSaveItem(e) {
@@ -1103,32 +861,29 @@ function handleSaveItem(e) {
     const price = parseFloat(document.getElementById('modal-item-price').value);
     const stock = parseInt(document.getElementById('modal-item-stock').value) || 0;
 
-    let savedItemData;
     if (id) {
         let idx = items.findIndex(i => i.id == id);
         if (idx !== -1) {
-            savedItemData = { id: parseInt(id), name, category: cat, price, stock };
-            items[idx] = savedItemData;
+            items[idx] = { id: parseInt(id), name, category: cat, price, stock };
         }
     } else {
-        savedItemData = { id: Date.now(), name, category: cat, price, stock };
-        items.push(savedItemData);
+        items.push({ id: Date.now(), name, category: cat, price, stock });
     }
 
     localStorage.setItem('krupa_items', JSON.stringify(items));
-    if (savedItemData) saveItemToFirebase(savedItemData);
     renderItemsTable();
     renderPosItems();
     closeItemModal();
+    showToastNotification('Item catalogue updated!', 'success');
 }
 
 function deleteItem(id) {
     if (confirm('Are you sure you want to delete this item?')) {
         items = items.filter(i => i.id !== id);
         localStorage.setItem('krupa_items', JSON.stringify(items));
-        deleteItemFromFirebase(id);
         renderItemsTable();
         renderPosItems();
+        showToastNotification('Item removed!', 'info');
     }
 }
 
@@ -1174,12 +929,14 @@ function filterHistory(status) {
     });
 
     const activeBtn = document.getElementById(`hist-filter-${status}`);
-    if (status === 'all') {
-        activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow';
-    } else if (status === 'paid') {
-        activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow';
-    } else if (status === 'credit') {
-        activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-600 text-white shadow';
+    if (activeBtn) {
+        if (status === 'all') {
+            activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow';
+        } else if (status === 'paid') {
+            activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow';
+        } else if (status === 'credit') {
+            activeBtn.className = 'hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-600 text-white shadow';
+        }
     }
     renderHistoryTable();
 }
@@ -1191,7 +948,6 @@ function markBillAsPaid(billNo) {
     if (confirm(`Are you sure you want to mark Bill #${billNo} for ${bill.customerName} (₹${bill.grandTotal}) as PAID?`)) {
         bill.paymentStatus = 'paid';
         localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
-        updateBillInFirebase(bill);
         renderHistoryTable();
         renderCreditCustomersTable();
         updateHeaderStats();
@@ -1254,9 +1010,13 @@ function renderHistoryTable() {
     if (statMonth) statMonth.innerText = `₹${monthSales}`;
     if (statTotal) statTotal.innerText = `₹${totalAllTime}`;
 
-    document.getElementById('hist-count-all').innerText = countAll;
-    document.getElementById('hist-count-paid').innerText = countPaid;
-    document.getElementById('hist-count-credit').innerText = countCredit;
+    const countAllEl = document.getElementById('hist-count-all');
+    const countPaidEl = document.getElementById('hist-count-paid');
+    const countCreditEl = document.getElementById('hist-count-credit');
+
+    if (countAllEl) countAllEl.innerText = countAll;
+    if (countPaidEl) countPaidEl.innerText = countPaid;
+    if (countCreditEl) countCreditEl.innerText = countCredit;
 
     let filtered = billsHistory.filter(b => {
         let status = b.paymentStatus || 'paid';
@@ -1296,7 +1056,7 @@ function renderHistoryTable() {
         let bookBadge = isCredit ? (
             b.isBookNoted 
                 ? `<div class="mt-1 text-[10px] font-bold text-amber-300 flex items-center justify-center gap-1"><i class="fa-solid fa-book-bookmark"></i> Noted in Book</div>`
-                : `<div class="mt-1 text-[10px] font-medium text-gray-500 flex items-center justify-center gap-1"><i class="fa-solid fa-pen"></i> Not in Book</div>`
+                : `<div class="mt-1 text-[10px] font-medium text-gray-400 flex items-center justify-center gap-1"><i class="fa-solid fa-pen"></i> Not in Book</div>`
         ) : '';
 
         return `
@@ -1334,7 +1094,6 @@ function toggleBookNoted(billNo) {
 
     bill.isBookNoted = !bill.isBookNoted;
     localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
-    updateBillInFirebase(bill);
     
     renderHistoryTable();
     renderCreditCustomersTable();
@@ -1353,7 +1112,7 @@ function toggleBookNoted(billNo) {
     }
 }
 
-// ================= SEPARATE CREDIT CUSTOMERS (UDHAR KHATA) DIRECTORY =================
+// ================= CREDIT CUSTOMERS (UDHAR KHATA) DIRECTORY =================
 function renderCreditCustomersTable() {
     const tbody = document.getElementById('credit-customers-table-body');
     if (!tbody) return;
@@ -1406,7 +1165,7 @@ function renderCreditCustomersTable() {
         <tr class="hover:bg-white/5 transition">
             <td class="px-4 py-3 font-semibold text-white">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-red-500/20 text-red-400 font-bold flex items-center justify-center text-xs border border-red-500/30">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-red-500/20 text-red-400 font-bold flex items-center justify-center text-xs border border-red-500/30 shrink-0">
                         ${c.name.charAt(0).toUpperCase()}
                     </div>
                     <span>${c.name}</span>
@@ -1438,7 +1197,6 @@ function payCustomerCreditAll(custName, custPhone) {
             b.paymentStatus = 'paid';
             settledTotal += b.grandTotal;
             matchCount++;
-            updateBillInFirebase(b);
         }
     });
 

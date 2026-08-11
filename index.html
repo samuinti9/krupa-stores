@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Krupa Store - Smart Billing & Inventory</title>
+    <title>Krupa Store - Smart Mobile Billing & Inventory POS</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,203 +36,111 @@
         }
     </script>
     <!-- External Custom CSS Stylesheet -->
-    <link rel="stylesheet" href="style.css">
-
-    <!-- Firebase Cloud Database SDKs (v10 Compat for Mobile Web) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
 
-    <!-- Header Navigation Bar -->
-    <header class="bg-white sticky top-0 z-40 border-b border-gray-200 px-4 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow">
-                <i class="fa-solid fa-store text-lg"></i>
+    <!-- Header Navigation Bar (Compact & Mobile Responsive) -->
+    <header class="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-gray-200 px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 shadow-sm">
+        <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow shrink-0">
+                <i class="fa-solid fa-store text-base sm:text-lg"></i>
             </div>
             <div>
-                <h1 class="text-xl font-bold font-outfit tracking-tight text-slate-900">
-                    KRUPA <span class="text-indigo-600 font-semibold text-xs px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-200">STORE POS</span>
+                <h1 class="text-base sm:text-xl font-bold font-outfit tracking-tight text-slate-900 leading-tight">
+                    KRUPA <span class="text-indigo-600 font-semibold text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200">POS</span>
                 </h1>
-                <p class="text-xs text-slate-500">Retail Fancy & Grocery Store Management</p>
+                <p class="text-[10px] sm:text-xs text-slate-500 hidden xs:block">Retail Fancy & Grocery Management</p>
             </div>
         </div>
 
-        <!-- Clock & Today's Sales & Settings Button -->
-        <div class="flex items-center gap-3 flex-wrap">
+        <!-- Header Actions & Sales Today Badge -->
+        <div class="flex items-center gap-2">
+            <!-- Clock (Hidden on Mobile) -->
             <div class="hidden md:flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs text-slate-700">
                 <i class="fa-regular fa-clock text-indigo-600"></i>
                 <span id="current-clock" class="font-mono font-semibold">--:--:--</span>
             </div>
 
             <!-- Sales Total -->
-            <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs text-emerald-700 font-bold">
-                <i class="fa-solid fa-indian-rupee-sign"></i>
-                <span>Sales Today: <span id="header-today-sales">₹0</span></span>
-            </div>
-
-            <!-- Firebase Cloud DB Sync Status Badge -->
-            <div id="firebase-sync-status" class="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm">
-                <i class="fa-solid fa-cloud text-emerald-600 text-sm"></i>
-                <span id="firebase-sync-text">Cloud DB Active</span>
+            <div class="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-xl text-xs text-emerald-700 font-bold">
+                <i class="fa-solid fa-indian-rupee-sign text-xs"></i>
+                <span>Sales: <span id="header-today-sales">₹0</span></span>
             </div>
 
             <!-- Quick Access Settings Button -->
-            <button onclick="switchTab('settings')" title="Open Store Settings" aria-label="Open Store Settings" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 transition shadow-sm">
+            <button onclick="switchTab('settings')" title="Open Store Settings" aria-label="Open Store Settings" class="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 transition shadow-sm">
                 <i class="fa-solid fa-gear text-indigo-600"></i>
-                <span>Settings</span>
-            </button>
-
-            <!-- Master Security PIN Lock Button -->
-            <button onclick="lockStoreApp()" title="Lock Store App with Master PIN" aria-label="Lock Store App with Master PIN" class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-xl text-xs font-semibold text-amber-900 transition shadow-sm">
-                <i class="fa-solid fa-lock text-amber-600"></i>
-                <span id="lock-btn-text">Lock App</span>
+                <span class="hidden sm:inline">Settings</span>
             </button>
         </div>
     </header>
 
-    <!-- App Navigation Tabs -->
-    <nav class="bg-slate-900 text-white px-4 lg:px-8 py-2 shadow-inner">
-        <div class="flex items-center gap-2 overflow-x-auto">
-            <button onclick="switchTab('pos')" id="tab-btn-pos" class="tab-btn px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition bg-indigo-600 text-white shadow">
+    <!-- App Navigation Tabs (Smooth Mobile Horizontal Scroll) -->
+    <nav class="bg-slate-900 text-white px-2 sm:px-6 py-1.5 shadow-inner sticky top-[53px] z-30">
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 whitespace-nowrap">
+            <button onclick="switchTab('pos')" id="tab-btn-pos" class="tab-btn px-3 py-2 rounded-lg font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition bg-indigo-600 text-white shadow shrink-0">
                 <i class="fa-solid fa-calculator"></i>
                 <span>Billing & Calculator</span>
             </button>
-            <button onclick="switchTab('items')" id="tab-btn-items" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition text-slate-300 hover:text-white hover:bg-slate-800">
+            <button onclick="switchTab('items')" id="tab-btn-items" class="tab-btn px-3 py-2 rounded-lg font-medium text-xs sm:text-sm flex items-center gap-1.5 transition text-slate-300 hover:text-white hover:bg-slate-800 shrink-0">
                 <i class="fa-solid fa-boxes-stacked"></i>
-                <span>Item Catalogue (<span id="items-count-badge">0</span>)</span>
+                <span>Items (<span id="items-count-badge">0</span>)</span>
             </button>
-            <button onclick="switchTab('history')" id="tab-btn-history" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition text-slate-300 hover:text-white hover:bg-slate-800">
+            <button onclick="switchTab('history')" id="tab-btn-history" class="tab-btn px-3 py-2 rounded-lg font-medium text-xs sm:text-sm flex items-center gap-1.5 transition text-slate-300 hover:text-white hover:bg-slate-800 shrink-0">
                 <i class="fa-solid fa-receipt"></i>
                 <span>Bill History</span>
             </button>
-            <button onclick="switchTab('customers')" id="tab-btn-customers" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition text-slate-300 hover:text-white hover:bg-slate-800">
+            <button onclick="switchTab('customers')" id="tab-btn-customers" class="tab-btn px-3 py-2 rounded-lg font-medium text-xs sm:text-sm flex items-center gap-1.5 transition text-slate-300 hover:text-white hover:bg-slate-800 shrink-0">
                 <i class="fa-solid fa-book-bookmark text-red-400"></i>
-                <span>Credit Customers (Udhar) (<span id="credit-cust-count-badge">0</span>)</span>
+                <span>Credit (Udhar) (<span id="credit-cust-count-badge">0</span>)</span>
             </button>
-            <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition text-slate-300 hover:text-white hover:bg-slate-800">
+            <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn px-3 py-2 rounded-lg font-medium text-xs sm:text-sm flex items-center gap-1.5 transition text-slate-300 hover:text-white hover:bg-slate-800 shrink-0">
                 <i class="fa-solid fa-gear"></i>
-                <span>Store Settings</span>
+                <span>Settings</span>
             </button>
         </div>
     </nav>
 
     <!-- Main Content Container -->
-    <main class="flex-1 p-4 lg:p-6 max-w-7xl w-full mx-auto">
+    <main class="flex-1 p-3 sm:p-6 max-w-7xl w-full mx-auto pb-16 lg:pb-6">
         
         <!-- SECTION 1: POS & CALCULATOR BILLING TAB -->
-        <div id="tab-pos" class="tab-content grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div id="tab-pos" class="tab-content grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
             
-            <!-- Left Side: Quick Calculator & Custom Quick Add -->
-            <div class="lg:col-span-4 flex flex-col gap-6">
-                
-                <!-- Custom Loose / Unlisted Item Fast Entry -->
-                <div class="glass-card rounded-2xl p-4 border border-white/10">
-                    <h3 class="font-outfit font-semibold text-sm text-gray-300 mb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-bolt text-amber-400"></i> Fast Item Input (Name + Price)
-                    </h3>
-                    <form onsubmit="handleQuickCustomAdd(event)" class="space-y-3">
-                        <div>
-                            <label class="text-xs text-gray-400 block mb-1">Item Name</label>
-                            <input type="text" id="quick-item-name" title="Custom Item Name" aria-label="Custom Item Name" placeholder="e.g. Loose Sugar 1kg or Ribbon" required class="w-full glass-input px-3 py-2 rounded-xl text-sm">
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-1">Price (₹)</label>
-                                <input type="number" step="0.5" id="quick-item-price" title="Custom Item Price" aria-label="Custom Item Price" placeholder="45" required class="w-full glass-input px-3 py-2 rounded-xl text-sm">
-                            </div>
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-1">Qty</label>
-                                <input type="number" id="quick-item-qty" title="Custom Item Quantity" aria-label="Custom Item Quantity" value="1" min="1" required class="w-full glass-input px-3 py-2 rounded-xl text-sm">
-                            </div>
-                        </div>
-                        <button type="submit" class="w-full py-2 bg-indigo-600/80 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition border border-indigo-400/30">
-                            + Add Custom Item To Bill
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Built-In Billing Calculator -->
-                <div class="glass-card rounded-2xl p-4 border border-white/10 shadow-xl">
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 class="font-outfit font-bold text-gray-200 flex items-center gap-2">
-                            <i class="fa-solid fa-calculator text-indigo-400"></i> Smart Calculator
-                        </h2>
-                        <span class="text-xs text-gray-400 font-mono">Quick Math</span>
-                    </div>
-
-                    <!-- Calculator Screen -->
-                    <div class="bg-gray-950/80 border border-indigo-500/30 rounded-xl p-3 mb-3 text-right">
-                        <div id="calc-expression" class="text-xs text-gray-400 font-mono h-4 overflow-hidden"></div>
-                        <div id="calc-display" class="text-2xl font-bold font-mono text-indigo-300 tracking-wider">0</div>
-                    </div>
-
-                    <!-- Calculator Numpad Grid -->
-                    <div class="grid grid-cols-4 gap-2">
-                        <button onclick="calcClear()" class="calc-btn p-3 bg-red-500/20 text-red-400 font-bold rounded-xl border border-red-500/30 hover:bg-red-500/30">C</button>
-                        <button onclick="calcBackspace()" class="calc-btn p-3 bg-gray-800 text-gray-300 font-bold rounded-xl border border-white/5 hover:bg-gray-700">⌫</button>
-                        <button onclick="calcOp('/')" class="calc-btn p-3 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">÷</button>
-                        <button onclick="calcOp('*')" class="calc-btn p-3 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">×</button>
-
-                        <button onclick="calcNum('7')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">7</button>
-                        <button onclick="calcNum('8')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">8</button>
-                        <button onclick="calcNum('9')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">9</button>
-                        <button onclick="calcOp('-')" class="calc-btn p-3 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">-</button>
-
-                        <button onclick="calcNum('4')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">4</button>
-                        <button onclick="calcNum('5')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">5</button>
-                        <button onclick="calcNum('6')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">6</button>
-                        <button onclick="calcOp('+')" class="calc-btn p-3 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">+</button>
-
-                        <button onclick="calcNum('1')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">1</button>
-                        <button onclick="calcNum('2')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">2</button>
-                        <button onclick="calcNum('3')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">3</button>
-                        <button onclick="calcEqual()" class="calc-btn row-span-2 p-3 bg-gradient-to-b from-brand-500 to-brand-700 text-white font-bold text-xl rounded-xl shadow-md hover:brightness-110 flex items-center justify-center">=</button>
-
-                        <button onclick="calcNum('0')" class="calc-btn col-span-2 p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">0</button>
-                        <button onclick="calcNum('.')" class="calc-btn p-3 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">.</button>
-                    </div>
-
-                    <!-- Push Calc Result as Quick Custom Item to Bill -->
-                    <button onclick="addCalcResultToBill()" class="w-full mt-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 text-sm">
-                        <i class="fa-solid fa-plus-circle"></i> Add Calc Total (₹<span id="calc-add-val">0</span>) to Bill
-                    </button>
-                </div>
-            </div>
-
-            <!-- Middle Side: Items Catalogue Selection Grid -->
-            <div class="lg:col-span-5 flex flex-col gap-4">
-                <div class="glass-card rounded-2xl p-4 border border-white/10 flex flex-col h-full">
+            <!-- Items Catalogue Selection Grid (Order 1 on Mobile for Quick Tapping) -->
+            <div class="order-1 lg:order-2 lg:col-span-5 flex flex-col gap-4">
+                <div class="glass-card rounded-2xl p-3.5 sm:p-4 border border-white/10 flex flex-col h-full">
                     
                     <!-- Search & Filter Header -->
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-3">
                         <div class="relative flex-1">
                             <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-sm"></i>
-                            <input type="text" id="pos-search" oninput="renderPosItems()" placeholder="Search item name or price..." class="w-full glass-input pl-10 pr-4 py-2 rounded-xl text-sm">
+                            <input type="text" id="pos-search" oninput="renderPosItems()" placeholder="Search item name or price..." class="w-full glass-input pl-10 pr-4 py-2 rounded-xl text-base sm:text-sm">
                         </div>
                         
                         <!-- Category Filter Buttons -->
-                        <div class="flex items-center gap-1 bg-gray-900/60 p-1 rounded-xl border border-white/5 text-xs">
-                            <button onclick="setPosFilter('all')" id="filter-all" class="pos-filter-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-medium">All</button>
-                            <button onclick="setPosFilter('fancy')" id="filter-fancy" class="pos-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white">Fancy</button>
-                            <button onclick="setPosFilter('grocery')" id="filter-grocery" class="pos-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white">Grocery</button>
+                        <div class="flex items-center gap-1 bg-gray-900/60 p-1 rounded-xl border border-white/5 text-xs justify-center">
+                            <button onclick="setPosFilter('all')" id="filter-all" class="pos-filter-btn px-3 py-1 rounded-lg bg-indigo-600 text-white font-medium">All</button>
+                            <button onclick="setPosFilter('fancy')" id="filter-fancy" class="pos-filter-btn px-3 py-1 rounded-lg text-gray-400 hover:text-white">Fancy</button>
+                            <button onclick="setPosFilter('grocery')" id="filter-grocery" class="pos-filter-btn px-3 py-1 rounded-lg text-gray-400 hover:text-white">Grocery</button>
                         </div>
                     </div>
 
                     <!-- Items Card Grid -->
-                    <div id="pos-items-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3 overflow-y-auto max-h-[550px] pr-1">
+                    <div id="pos-items-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2.5 overflow-y-auto max-h-[480px] sm:max-h-[550px] pr-1">
                         <!-- Items rendered dynamically -->
                     </div>
                 </div>
             </div>
 
-            <!-- Right Side: Active Bill / Cart Summary -->
-            <div class="lg:col-span-3 flex flex-col gap-4">
-                <div class="glass-card rounded-2xl p-4 border border-white/10 flex flex-col justify-between h-full shadow-2xl">
+            <!-- Active Bill / Cart Summary (Order 2 on Mobile) -->
+            <div id="cart-summary-section" class="order-2 lg:order-3 lg:col-span-3 flex flex-col gap-4">
+                <div class="glass-card rounded-2xl p-3.5 sm:p-4 border border-white/10 flex flex-col justify-between h-full shadow-2xl">
                     <div>
-                        <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
+                        <div class="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3">
                             <div>
-                                <h2 class="font-outfit font-bold text-gray-100 flex items-center gap-2">
+                                <h2 class="font-outfit font-bold text-gray-100 flex items-center gap-2 text-base sm:text-lg">
                                     <i class="fa-solid fa-receipt text-indigo-400"></i> Current Bill
                                 </h2>
                                 <p class="text-xs text-gray-400" id="current-bill-no">Bill #1001</p>
@@ -256,22 +164,22 @@
                                 </div>
                             </div>
                             <div>
-                                <input type="text" id="cust-name" placeholder="Customer Name (REQUIRED for Credit)" class="w-full glass-input px-3 py-1.5 rounded-lg text-xs">
+                                <input type="text" id="cust-name" placeholder="Customer Name (REQUIRED for Credit)" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
                             </div>
                             <div>
-                                <input type="tel" id="cust-phone" placeholder="WhatsApp / Phone No." class="w-full glass-input px-3 py-1.5 rounded-lg text-xs">
+                                <input type="tel" id="cust-phone" placeholder="WhatsApp / Phone No." class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
                             </div>
                             <div id="credit-warning-note" class="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 p-2 rounded-xl flex items-center gap-1.5 font-medium">
-                                <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Customer Name is required for Credit Bill proof!
+                                <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Customer Name is required for Credit Bill!
                             </div>
                         </div>
 
                         <!-- Cart Items List -->
-                        <div id="cart-items-container" class="space-y-2 max-h-[260px] overflow-y-auto pr-1 border-y border-white/5 py-2 my-2">
-                            <div id="empty-cart-msg" class="py-8 text-center text-gray-500">
-                                <i class="fa-solid fa-basket-shopping text-3xl mb-2 text-gray-600 block"></i>
+                        <div id="cart-items-container" class="space-y-2 max-h-[220px] sm:max-h-[260px] overflow-y-auto pr-1 border-y border-white/5 py-2 my-2">
+                            <div id="empty-cart-msg" class="py-6 text-center text-gray-500">
+                                <i class="fa-solid fa-basket-shopping text-2xl mb-1 text-gray-600 block"></i>
                                 <p class="text-xs">No items in bill yet.</p>
-                                <p class="text-[11px] text-gray-600 mt-1">Click an item or use calculator/custom input</p>
+                                <p class="text-[11px] text-gray-500 mt-0.5">Click items above or use calculator</p>
                             </div>
                         </div>
                     </div>
@@ -284,7 +192,7 @@
                         </div>
                         <div class="flex justify-between items-center text-xs text-gray-300">
                             <span>Discount (₹)</span>
-                            <input type="number" id="bill-discount" value="0" min="0" title="Discount Amount" placeholder="0" oninput="updateBillTotals()" class="w-20 glass-input text-right px-2 py-0.5 rounded text-xs font-mono">
+                            <input type="number" id="bill-discount" value="0" min="0" title="Discount Amount" placeholder="0" oninput="updateBillTotals()" class="w-20 glass-input text-right px-2 py-1 rounded text-base sm:text-xs font-mono">
                         </div>
                         
                         <div class="flex justify-between items-center bg-indigo-950/60 p-2.5 rounded-xl border border-indigo-500/30 mt-2">
@@ -296,11 +204,11 @@
                         <div class="grid grid-cols-2 gap-2 text-xs pt-1">
                             <div>
                                 <label class="text-[11px] text-gray-400 block mb-0.5">Cash Given</label>
-                                <input type="number" id="cash-given" title="Cash Given" placeholder="0" oninput="calculateChange()" class="w-full glass-input px-2 py-1 rounded text-xs font-mono">
+                                <input type="number" id="cash-given" title="Cash Given" placeholder="0" oninput="calculateChange()" class="w-full glass-input px-2 py-1 rounded text-base sm:text-xs font-mono">
                             </div>
                             <div>
                                 <label class="text-[11px] text-gray-400 block mb-0.5">Return Change</label>
-                                <div id="cash-change" class="glass-input px-2 py-1 rounded text-xs font-mono font-bold text-amber-300 flex items-center justify-end h-[28px]">₹0</div>
+                                <div id="cash-change" class="glass-input px-2 py-1 rounded text-xs font-mono font-bold text-amber-300 flex items-center justify-end h-[34px] sm:h-[28px]">₹0</div>
                             </div>
                         </div>
 
@@ -310,7 +218,7 @@
                                 <i class="fa-solid fa-check-circle"></i> Save Bill
                             </button>
                             <button onclick="checkoutBill(true)" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-lg shadow-emerald-600/30">
-                                <i class="fa-solid fa-print"></i> Print & Share
+                                <i class="fa-solid fa-print"></i> Print/Share
                             </button>
                             <button onclick="switchTab('settings')" class="py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1 shadow">
                                 <i class="fa-solid fa-gear"></i> Settings
@@ -321,17 +229,108 @@
                 </div>
             </div>
 
+            <!-- Fast Custom Input & Smart Calculator (Order 3 on Mobile) -->
+            <div class="order-3 lg:order-1 lg:col-span-4 flex flex-col gap-4 sm:gap-6">
+                
+                <!-- Custom Loose / Unlisted Item Fast Entry -->
+                <div class="glass-card rounded-2xl p-3.5 sm:p-4 border border-white/10">
+                    <h3 class="font-outfit font-semibold text-sm text-gray-300 mb-2.5 flex items-center gap-2">
+                        <i class="fa-solid fa-bolt text-amber-400"></i> Fast Item Input (Name + Price)
+                    </h3>
+                    <form onsubmit="handleQuickCustomAdd(event)" class="space-y-2.5">
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Item Name</label>
+                            <input type="text" id="quick-item-name" title="Custom Item Name" aria-label="Custom Item Name" placeholder="e.g. Loose Sugar 1kg or Ribbon" required class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-1">Price (₹)</label>
+                                <input type="number" step="0.5" id="quick-item-price" title="Custom Item Price" aria-label="Custom Item Price" placeholder="45" required class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-1">Qty</label>
+                                <input type="number" id="quick-item-qty" title="Custom Item Quantity" aria-label="Custom Item Quantity" value="1" min="1" required class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-indigo-600/80 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition border border-indigo-400/30">
+                            + Add Custom Item To Bill
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Built-In Billing Calculator -->
+                <div class="glass-card rounded-2xl p-3.5 sm:p-4 border border-white/10 shadow-xl">
+                    <div class="flex items-center justify-between mb-2.5">
+                        <h2 class="font-outfit font-bold text-gray-200 flex items-center gap-2 text-sm sm:text-base">
+                            <i class="fa-solid fa-calculator text-indigo-400"></i> Smart Calculator
+                        </h2>
+                        <span class="text-xs text-gray-400 font-mono">Quick Math</span>
+                    </div>
+
+                    <!-- Calculator Screen -->
+                    <div class="bg-gray-950/80 border border-indigo-500/30 rounded-xl p-2.5 mb-3 text-right">
+                        <div id="calc-expression" class="text-xs text-gray-400 font-mono h-4 overflow-hidden"></div>
+                        <div id="calc-display" class="text-2xl font-bold font-mono text-indigo-300 tracking-wider">0</div>
+                    </div>
+
+                    <!-- Calculator Numpad Grid -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="calcClear()" class="calc-btn min-h-[44px] p-2.5 bg-red-500/20 text-red-400 font-bold rounded-xl border border-red-500/30 hover:bg-red-500/30">C</button>
+                        <button onclick="calcBackspace()" class="calc-btn min-h-[44px] p-2.5 bg-gray-800 text-gray-300 font-bold rounded-xl border border-white/5 hover:bg-gray-700">⌫</button>
+                        <button onclick="calcOp('/')" class="calc-btn min-h-[44px] p-2.5 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">÷</button>
+                        <button onclick="calcOp('*')" class="calc-btn min-h-[44px] p-2.5 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">×</button>
+
+                        <button onclick="calcNum('7')" class="calc-btn min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">7</button>
+                        <button onclick="calcNum('8')" class="calc-btn min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">8</button>
+                        <button onclick="calcNum('9')" class="calc-btn min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">9</button>
+                        <button onclick="calcOp('-')" class="calc-btn min-h-[44px] p-2.5 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">-</button>
+
+                        <button onclick="calcNum('4')" class="calc-btn min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">4</button>
+                        <button onclick="calcNum('5')" class="calc-btn min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">5</button>
+                        <button onclick="calcNum('6')" class="calc-btn min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">6</button>
+                        <button onclick="calcOp('+')" class="calc-btn min-h-[44px] p-2.5 bg-indigo-500/20 text-indigo-300 font-bold rounded-xl border border-indigo-500/30 hover:bg-indigo-500/30">+</button>
+
+                        <button onclick="calcNum('1')" class="calc-btn min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">1</button>
+                        <button onclick="calcNum('2')" class="calc-btn min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">2</button>
+                        <button onclick="calcNum('3')" class="calc-btn min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">3</button>
+                        <button onclick="calcEqual()" class="calc-btn row-span-2 min-h-[90px] p-2.5 bg-gradient-to-b from-brand-500 to-brand-700 text-white font-bold text-xl rounded-xl shadow-md hover:brightness-110 flex items-center justify-center">=</button>
+
+                        <button onclick="calcNum('0')" class="calc-btn col-span-2 min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">0</button>
+                        <button onclick="calcNum('.')" class="calc-btn min-h-[44px] p-2.5 bg-gray-800/80 text-white font-semibold text-lg rounded-xl border border-white/5 hover:bg-gray-700">.</button>
+                    </div>
+
+                    <!-- Push Calc Result as Quick Custom Item to Bill -->
+                    <button onclick="addCalcResultToBill()" class="w-full mt-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 text-xs sm:text-sm">
+                        <i class="fa-solid fa-plus-circle"></i> Add Calc Total (₹<span id="calc-add-val">0</span>) to Bill
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Floating Quick Cart Drawer Button on Mobile -->
+        <div class="lg:hidden fixed bottom-3 left-3 right-3 z-40">
+            <button onclick="scrollToCartSummary()" class="w-full py-3 px-4 bg-indigo-600 text-white rounded-2xl font-bold text-xs shadow-2xl flex items-center justify-between border border-indigo-400/30 backdrop-blur-md">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-basket-shopping text-base"></i>
+                    <span>Bill Cart (<span id="mobile-cart-count">0</span> items)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="font-mono text-sm text-emerald-300 font-extrabold">₹<span id="mobile-cart-total">0</span></span>
+                    <i class="fa-solid fa-arrow-down text-xs"></i>
+                </div>
+            </button>
         </div>
 
         <!-- SECTION 2: ITEM CATALOGUE MANAGEMENT TAB -->
-        <div id="tab-items" class="tab-content hidden space-y-6">
+        <div id="tab-items" class="tab-content hidden space-y-4 sm:space-y-6">
             
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-900/60 p-4 rounded-2xl border border-white/10">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gray-900/60 p-4 rounded-2xl border border-white/10">
                 <div>
-                    <h2 class="text-xl font-bold font-outfit text-white">Item Catalogue</h2>
+                    <h2 class="text-lg sm:text-xl font-bold font-outfit text-white">Item Catalogue</h2>
                     <p class="text-xs text-gray-400">Add, edit, or delete Fancy & Grocery items with their prices</p>
                 </div>
-                <button onclick="openAddItemModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-brand-500 hover:brightness-110 text-white text-sm font-semibold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                <button onclick="openAddItemModal()" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-brand-500 hover:brightness-110 text-white text-xs sm:text-sm font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
                     <i class="fa-solid fa-plus"></i> Add New Item
                 </button>
             </div>
@@ -339,8 +338,8 @@
             <!-- Items Table -->
             <div class="glass-card rounded-2xl border border-white/10 overflow-hidden shadow-xl">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-gray-300">
-                        <thead class="bg-gray-900/80 text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
+                    <table class="w-full text-left text-xs sm:text-sm text-gray-300 min-w-[500px]">
+                        <thead class="bg-gray-900/80 text-[11px] sm:text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
                             <tr>
                                 <th class="px-4 py-3">Item Name</th>
                                 <th class="px-4 py-3">Category</th>
@@ -359,67 +358,67 @@
         </div>
 
         <!-- SECTION 3: BILL HISTORY TAB -->
-        <div id="tab-history" class="tab-content hidden space-y-6">
+        <div id="tab-history" class="tab-content hidden space-y-4 sm:space-y-6">
             <div class="glass-card rounded-2xl p-4 border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 class="text-xl font-bold font-outfit text-white">Bill History & Sales Reports</h2>
+                    <h2 class="text-lg sm:text-xl font-bold font-outfit text-white">Bill History & Sales Reports</h2>
                     <p class="text-xs text-gray-400">Filter sales by date/time, view receipts, and analyze weekly/monthly performance</p>
                 </div>
-                <div class="flex flex-wrap items-center gap-3">
-                    <div class="text-right bg-slate-900/60 border border-white/10 px-3 py-1.5 rounded-xl">
-                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Today's Sales</div>
-                        <div class="text-lg font-bold font-mono text-indigo-400" id="hist-stat-today">₹0</div>
+                <!-- Stats Grid Responsive wrapping -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full md:w-auto">
+                    <div class="text-right bg-slate-900/60 border border-white/10 p-2.5 rounded-xl">
+                        <div class="text-[9px] sm:text-[10px] uppercase font-bold text-gray-400 tracking-wide">Today's Sales</div>
+                        <div class="text-base sm:text-lg font-bold font-mono text-indigo-400" id="hist-stat-today">₹0</div>
                     </div>
-                    <div class="text-right bg-slate-900/60 border border-white/10 px-3 py-1.5 rounded-xl">
-                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">This Week</div>
-                        <div class="text-lg font-bold font-mono text-indigo-300" id="hist-stat-week">₹0</div>
+                    <div class="text-right bg-slate-900/60 border border-white/10 p-2.5 rounded-xl">
+                        <div class="text-[9px] sm:text-[10px] uppercase font-bold text-gray-400 tracking-wide">This Week</div>
+                        <div class="text-base sm:text-lg font-bold font-mono text-indigo-300" id="hist-stat-week">₹0</div>
                     </div>
-                    <div class="text-right bg-slate-900/60 border border-white/10 px-3 py-1.5 rounded-xl">
-                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">This Month</div>
-                        <div class="text-lg font-bold font-mono text-emerald-400" id="hist-stat-month">₹0</div>
+                    <div class="text-right bg-slate-900/60 border border-white/10 p-2.5 rounded-xl">
+                        <div class="text-[9px] sm:text-[10px] uppercase font-bold text-gray-400 tracking-wide">This Month</div>
+                        <div class="text-base sm:text-lg font-bold font-mono text-emerald-400" id="hist-stat-month">₹0</div>
                     </div>
-                    <div class="text-right bg-indigo-950/60 border border-indigo-500/30 px-3 py-1.5 rounded-xl">
-                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Total All Time</div>
-                        <div class="text-lg font-bold font-mono text-indigo-300" id="history-total-sales">₹0</div>
+                    <div class="text-right bg-indigo-950/60 border border-indigo-500/30 p-2.5 rounded-xl">
+                        <div class="text-[9px] sm:text-[10px] uppercase font-bold text-gray-400 tracking-wide">Total All Time</div>
+                        <div class="text-base sm:text-lg font-bold font-mono text-indigo-300" id="history-total-sales">₹0</div>
                     </div>
                 </div>
             </div>
 
             <!-- History Filter Controls: Status + Date Range Filter -->
-            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-gray-900/60 p-3 rounded-2xl border border-white/10">
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 bg-gray-900/60 p-3 rounded-2xl border border-white/10">
                 <!-- Payment Status Buttons -->
-                <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-1.5 flex-wrap w-full lg:w-auto">
                     <button onclick="filterHistory('all')" id="hist-filter-all" class="hist-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow">
                         All Bills (<span id="hist-count-all">0</span>)
                     </button>
                     <button onclick="filterHistory('paid')" id="hist-filter-paid" class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white">
-                        🟢 Paid Bills (<span id="hist-count-paid">0</span>)
+                        🟢 Paid (<span id="hist-count-paid">0</span>)
                     </button>
                     <button onclick="filterHistory('credit')" id="hist-filter-credit" class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/10">
-                        🔴 Credit (Udhar) Bills (<span id="hist-count-credit">0</span>)
+                        🔴 Credit (Udhar) (<span id="hist-count-credit">0</span>)
                     </button>
                 </div>
 
                 <!-- Date Period Filters -->
-                <div class="flex items-center gap-2 flex-wrap text-xs">
-                    <span class="text-gray-400 font-medium mr-1"><i class="fa-regular fa-calendar text-indigo-400 mr-1"></i>Period:</span>
+                <div class="flex items-center gap-1.5 flex-wrap text-xs w-full lg:w-auto">
+                    <span class="text-gray-400 font-medium mr-1 hidden sm:inline"><i class="fa-regular fa-calendar text-indigo-400 mr-1"></i>Period:</span>
                     <button onclick="setDatePeriodFilter('all')" id="date-btn-all" class="date-filter-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold shadow">All Time</button>
                     <button onclick="setDatePeriodFilter('today')" id="date-btn-today" class="date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white">Today</button>
                     <button onclick="setDatePeriodFilter('week')" id="date-btn-week" class="date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white">This Week</button>
                     <button onclick="setDatePeriodFilter('month')" id="date-btn-month" class="date-filter-btn px-2.5 py-1 rounded-lg text-gray-400 hover:text-white">This Month</button>
 
                     <!-- Custom Single Date Picker -->
-                    <div class="flex items-center gap-1.5 ml-2 border-l border-white/10 pl-3">
-                        <label class="text-[11px] text-gray-400 font-medium">Specific Date:</label>
-                        <input type="date" id="hist-custom-date" title="Filter by Specific Date" aria-label="Filter by Specific Date" placeholder="Select date" onchange="handleCustomDateChange(this.value)" class="glass-input px-2.5 py-1 rounded-lg text-xs font-mono text-gray-200">
+                    <div class="flex items-center gap-1 ml-auto sm:ml-2 border-l border-white/10 pl-2">
+                        <input type="date" id="hist-custom-date" title="Filter by Specific Date" aria-label="Filter by Specific Date" placeholder="Select date" onchange="handleCustomDateChange(this.value)" class="glass-input px-2 py-1 rounded-lg text-base sm:text-xs font-mono text-gray-200">
                     </div>
                 </div>
             </div>
 
             <div class="glass-card rounded-2xl border border-white/10 overflow-hidden shadow-xl">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-gray-300">
-                        <thead class="bg-gray-900/80 text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
+                    <table class="w-full text-left text-xs sm:text-sm text-gray-300 min-w-[650px]">
+                        <thead class="bg-gray-900/80 text-[11px] sm:text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
                             <tr>
                                 <th class="px-4 py-3">Bill No.</th>
                                 <th class="px-4 py-3">Date & Time</th>
@@ -438,25 +437,25 @@
             </div>
         </div>
 
-        <!-- SECTION 4: SEPARATE DEDICATED CREDIT CUSTOMERS (UDHAR KHATA) TAB -->
-        <div id="tab-customers" class="tab-content hidden space-y-6">
-            <div class="glass-card rounded-2xl p-6 border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <!-- SECTION 4: CREDIT CUSTOMERS (UDHAR KHATA) TAB -->
+        <div id="tab-customers" class="tab-content hidden space-y-4 sm:space-y-6">
+            <div class="glass-card rounded-2xl p-4 sm:p-6 border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-book-bookmark text-red-500 text-xl"></i>
-                        <h2 class="text-xl font-bold font-outfit text-white">Credit Customers Directory (Udhar Khata)</h2>
+                        <h2 class="text-lg sm:text-xl font-bold font-outfit text-white">Credit Customers Directory (Udhar Khata)</h2>
                     </div>
                     <p class="text-xs text-gray-400 mt-1">Dedicated customer ledger tracking outstanding credit balances & quick settlements</p>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <div class="text-right bg-red-950/70 border border-red-500/40 px-4 py-2 rounded-xl">
-                        <div class="text-[10px] uppercase font-bold text-red-400 tracking-wide">Total Pending Udhar</div>
-                        <div class="text-xl font-extrabold font-mono text-red-300" id="total-udhar-balance">₹0</div>
+                <div class="grid grid-cols-2 gap-3 w-full md:w-auto">
+                    <div class="text-right bg-red-950/70 border border-red-500/40 px-3 py-2 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-red-400 tracking-wide">Total Udhar</div>
+                        <div class="text-lg sm:text-xl font-extrabold font-mono text-red-300" id="total-udhar-balance">₹0</div>
                     </div>
-                    <div class="text-right bg-slate-900/70 border border-white/10 px-4 py-2 rounded-xl">
-                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Credit Accounts</div>
-                        <div class="text-xl font-extrabold font-mono text-white" id="total-udhar-customers">0</div>
+                    <div class="text-right bg-slate-900/70 border border-white/10 px-3 py-2 rounded-xl">
+                        <div class="text-[10px] uppercase font-bold text-gray-300 tracking-wide">Accounts</div>
+                        <div class="text-lg sm:text-xl font-extrabold font-mono text-white" id="total-udhar-customers">0</div>
                     </div>
                 </div>
             </div>
@@ -464,16 +463,16 @@
             <!-- Customer Search Filter -->
             <div class="flex justify-between items-center bg-gray-900/60 p-3 rounded-2xl border border-white/10">
                 <div class="relative max-w-sm w-full">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
-                    <input type="text" id="credit-cust-search" oninput="renderCreditCustomersTable()" title="Search customer name or phone" placeholder="Search customer name or phone..." class="w-full glass-input pl-8 pr-3 py-1.5 rounded-xl text-xs">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-xs"></i>
+                    <input type="text" id="credit-cust-search" oninput="renderCreditCustomersTable()" title="Search customer name or phone" placeholder="Search customer name or phone..." class="w-full glass-input pl-8 pr-3 py-2 rounded-xl text-base sm:text-xs">
                 </div>
             </div>
 
             <!-- Credit Customers Directory Table -->
             <div class="glass-card rounded-2xl border border-white/10 overflow-hidden shadow-xl">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-gray-300">
-                        <thead class="bg-gray-900/80 text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
+                    <table class="w-full text-left text-xs sm:text-sm text-gray-300 min-w-[650px]">
+                        <thead class="bg-gray-900/80 text-[11px] sm:text-xs uppercase font-semibold text-gray-400 border-b border-white/10">
                             <tr>
                                 <th class="px-4 py-3">Customer Name</th>
                                 <th class="px-4 py-3">Phone Number</th>
@@ -492,17 +491,17 @@
         </div>
 
         <!-- TAB 4: STORE SETTINGS -->
-        <div id="tab-settings" class="tab-content hidden space-y-6 animate-pop-in">
+        <div id="tab-settings" class="tab-content hidden space-y-4 sm:space-y-6 animate-pop-in">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-2xl font-bold font-outfit text-white">Store Settings & System Preferences</h2>
+                    <h2 class="text-xl sm:text-2xl font-bold font-outfit text-white">Store Settings & Preferences</h2>
                     <p class="text-xs text-gray-400">Customize store profile, billing defaults, and manage system themes</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Appearance & Theme Mode Card with Live Previews -->
-                <div class="glass-card rounded-2xl p-6 border border-white/10 space-y-4 col-span-1 lg:col-span-2">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <!-- Appearance & Theme Mode Card -->
+                <div class="glass-card rounded-2xl p-4 sm:p-6 border border-white/10 space-y-4 col-span-1 lg:col-span-2">
                     <div class="flex items-center gap-2 pb-3 border-b border-white/10 text-indigo-500">
                         <i class="fa-solid fa-palette text-lg"></i>
                         <h3 class="font-bold text-white text-base">Appearance & Theme Mode Options</h3>
@@ -538,7 +537,7 @@
                 </div>
 
                 <!-- Store Profile Settings -->
-                <div class="glass-card rounded-2xl p-6 border border-white/10 space-y-4">
+                <div class="glass-card rounded-2xl p-4 sm:p-6 border border-white/10 space-y-4">
                     <div class="flex items-center gap-2 pb-3 border-b border-white/10 text-brand-400">
                         <i class="fa-solid fa-store text-lg"></i>
                         <h3 class="font-bold text-white text-base">Store Profile & Receipt Details</h3>
@@ -547,27 +546,27 @@
                     <form onsubmit="handleSaveStoreProfile(event)" class="space-y-3 text-xs">
                         <div>
                             <label class="text-gray-300 block mb-1 font-medium">Store Name</label>
-                            <input type="text" id="setting-store-name" required title="Store Name" placeholder="e.g. Krupa Store" class="w-full glass-input px-3 py-2 rounded-xl">
+                            <input type="text" id="setting-store-name" required title="Store Name" placeholder="e.g. Krupa Store" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
                         </div>
 
                         <div>
                             <label class="text-gray-300 block mb-1 font-medium">Tagline / Subtitle</label>
-                            <input type="text" id="setting-store-tagline" title="Tagline / Subtitle" placeholder="e.g. Retail Fancy & Grocery Store" class="w-full glass-input px-3 py-2 rounded-xl">
+                            <input type="text" id="setting-store-tagline" title="Tagline / Subtitle" placeholder="e.g. Retail Fancy & Grocery Store" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="text-gray-300 block mb-1 font-medium">Phone Number</label>
-                                <input type="text" id="setting-store-phone" title="Phone Number" placeholder="e.g. +91 9876543210" class="w-full glass-input px-3 py-2 rounded-xl">
+                                <input type="text" id="setting-store-phone" title="Phone Number" placeholder="e.g. +91 9876543210" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
                             </div>
                             <div>
                                 <label class="text-gray-300 block mb-1 font-medium">Store Address</label>
-                                <input type="text" id="setting-store-address" title="Store Address" placeholder="e.g. Main Market Road" class="w-full glass-input px-3 py-2 rounded-xl">
+                                <input type="text" id="setting-store-address" title="Store Address" placeholder="e.g. Main Market Road" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-xs">
                             </div>
                         </div>
 
                         <div class="pt-2">
-                            <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-semibold flex items-center gap-2 text-xs shadow-lg shadow-brand-600/30">
+                            <button type="submit" class="w-full sm:w-auto px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 text-xs shadow-lg shadow-brand-600/30">
                                 <i class="fa-solid fa-floppy-disk"></i> Save Profile Settings
                             </button>
                         </div>
@@ -575,7 +574,7 @@
                 </div>
 
                 <!-- Master Security PIN Settings Card -->
-                <div class="glass-card rounded-2xl p-6 border border-white/10 space-y-4">
+                <div class="glass-card rounded-2xl p-4 sm:p-6 border border-white/10 space-y-4">
                     <div class="flex items-center gap-2 pb-3 border-b border-white/10 text-amber-400">
                         <i class="fa-solid fa-lock text-lg"></i>
                         <h3 class="font-bold text-white text-base">Store Lock & Master PIN Security</h3>
@@ -592,69 +591,22 @@
 
                         <div>
                             <label class="text-gray-300 block mb-1 font-medium">New 4-Digit Master PIN</label>
-                            <input type="password" id="setting-new-pin" maxlength="4" pattern="[0-9]{4}" title="4-Digit PIN" placeholder="Default: 1234" class="w-full glass-input px-3 py-2 rounded-xl text-sm font-mono tracking-widest">
+                            <input type="password" id="setting-new-pin" maxlength="4" pattern="[0-9]{4}" title="4-Digit PIN" placeholder="Default: 1234" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm font-mono tracking-widest">
                         </div>
 
-                        <div class="pt-2 flex items-center justify-between">
-                            <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold flex items-center gap-2 text-xs shadow-lg shadow-amber-600/30">
+                        <div class="pt-2 flex items-center justify-between flex-wrap gap-2">
+                            <button type="submit" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold flex items-center gap-2 text-xs shadow-lg shadow-amber-600/30">
                                 <i class="fa-solid fa-key"></i> Update Security PIN
                             </button>
-                            <button type="button" onclick="lockStoreApp()" class="px-3 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 rounded-xl font-semibold text-xs flex items-center gap-1.5">
+                            <button type="button" onclick="lockStoreApp()" class="px-3 py-2.5 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 rounded-xl font-semibold text-xs flex items-center gap-1.5">
                                 <i class="fa-solid fa-lock"></i> Lock App Now
                             </button>
                         </div>
                     </form>
                 </div>
 
-                <!-- Firebase Cloud Database Configuration Card -->
-                <div class="glass-card rounded-2xl p-6 border border-white/10 space-y-4 col-span-1 lg:col-span-2">
-                    <div class="flex items-center justify-between pb-3 border-b border-white/10">
-                        <div class="flex items-center gap-2 text-indigo-400">
-                            <i class="fa-solid fa-cloud text-lg"></i>
-                            <h3 class="font-bold text-white text-base">Google Firebase Cloud DB Setup & Sync</h3>
-                        </div>
-                        <span id="setting-firebase-status-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Local Mobile DB Active</span>
-                    </div>
-
-                    <p class="text-xs text-gray-400 leading-relaxed">
-                        To connect real-time cloud data sync across multiple mobile phones, enter your Google Firebase web app credentials (from <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" class="text-indigo-400 underline font-semibold">Firebase Console</a>):
-                    </p>
-
-                    <form onsubmit="handleSaveFirebaseConfig(event)" class="space-y-3 text-xs">
-                        <div>
-                            <label class="text-gray-300 block mb-1 font-medium">API Key (apiKey)</label>
-                            <input type="text" id="fb-config-apikey" title="Firebase API Key" aria-label="Firebase API Key" placeholder="AIzaSy..." class="w-full glass-input px-3 py-2 rounded-xl font-mono text-xs">
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-gray-300 block mb-1 font-medium">Project ID (projectId)</label>
-                                <input type="text" id="fb-config-projectid" title="Firebase Project ID" aria-label="Firebase Project ID" placeholder="krupa-stores-pos" class="w-full glass-input px-3 py-2 rounded-xl font-mono text-xs">
-                            </div>
-                            <div>
-                                <label class="text-gray-300 block mb-1 font-medium">Auth Domain (authDomain)</label>
-                                <input type="text" id="fb-config-authdomain" title="Firebase Auth Domain" aria-label="Firebase Auth Domain" placeholder="krupa-stores-pos.firebaseapp.com" class="w-full glass-input px-3 py-2 rounded-xl font-mono text-xs">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-gray-300 block mb-1 font-medium">App ID (appId)</label>
-                            <input type="text" id="fb-config-appid" title="Firebase App ID" aria-label="Firebase App ID" placeholder="1:123456789:web:abc..." class="w-full glass-input px-3 py-2 rounded-xl font-mono text-xs">
-                        </div>
-
-                        <div class="pt-2 flex items-center justify-between flex-wrap gap-3">
-                            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold flex items-center gap-2 text-xs shadow-lg shadow-indigo-600/30">
-                                <i class="fa-solid fa-cloud-arrow-up"></i> Save & Connect Cloud DB
-                            </button>
-                            <button type="button" onclick="syncLocalToCloudDB()" class="px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 rounded-xl font-semibold text-xs flex items-center gap-1.5">
-                                <i class="fa-solid fa-sync"></i> Push Local Data to Cloud
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
                 <!-- Backup & Data Management -->
-                <div class="glass-card rounded-2xl p-6 border border-white/10 space-y-4">
+                <div class="glass-card rounded-2xl p-4 sm:p-6 border border-white/10 space-y-4 col-span-1 lg:col-span-2">
                     <div class="flex items-center gap-2 pb-3 border-b border-white/10 text-emerald-400">
                         <i class="fa-solid fa-database text-lg"></i>
                         <h3 class="font-bold text-white text-base">Data Backup & Restore</h3>
@@ -662,15 +614,15 @@
 
                     <div class="space-y-4 text-xs">
                         <p class="text-gray-300 leading-relaxed">
-                            Export a backup copy of your stock catalog, bill history, and store settings to a JSON file.
+                            Export a backup copy of your stock catalog, bill history, and store settings to a JSON file or restore from a saved file.
                         </p>
 
                         <div class="flex flex-wrap items-center gap-3 pt-1">
-                            <button onclick="exportSystemData()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold flex items-center gap-2 text-xs shadow-lg shadow-emerald-600/30">
+                            <button onclick="exportSystemData()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold flex items-center gap-2 text-xs shadow-lg shadow-emerald-600/30">
                                 <i class="fa-solid fa-download"></i> Export Data (Backup JSON)
                             </button>
 
-                            <label class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-white/10 rounded-xl font-semibold flex items-center gap-2 text-xs cursor-pointer">
+                            <label class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 border border-white/10 rounded-xl font-semibold flex items-center gap-2 text-xs cursor-pointer">
                                 <i class="fa-solid fa-upload text-indigo-400"></i> Restore Data
                                 <input type="file" id="import-json-file" accept=".json" onchange="importSystemData(event)" class="hidden">
                             </label>
@@ -678,11 +630,11 @@
 
                         <div class="pt-4 border-t border-white/10">
                             <h4 class="font-bold text-red-400 mb-2">Danger Zone</h4>
-                            <div class="flex items-center gap-3">
-                                <button onclick="clearHistoryData()" class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 rounded-xl font-semibold text-xs">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <button onclick="clearHistoryData()" class="px-3 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 rounded-xl font-semibold text-xs">
                                     <i class="fa-solid fa-trash"></i> Clear Sales History
                                 </button>
-                                <button onclick="resetItemsToDefault()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-white/10 rounded-xl font-semibold text-xs">
+                                <button onclick="resetItemsToDefault()" class="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-white/10 rounded-xl font-semibold text-xs">
                                     <i class="fa-solid fa-rotate-left"></i> Reset Catalogue
                                 </button>
                             </div>
@@ -695,39 +647,39 @@
     </main>
 
     <!-- MODAL 1: ADD / EDIT ITEM MODAL -->
-    <div id="item-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md hidden p-4">
-        <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-white/10 shadow-2xl relative">
+    <div id="item-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md hidden p-4 overflow-y-auto">
+        <div class="glass-card rounded-2xl max-w-md w-full p-5 sm:p-6 border border-white/10 shadow-2xl relative my-auto">
             <button onclick="closeItemModal()" title="Close item modal" aria-label="Close item modal" class="absolute top-4 right-4 text-gray-400 hover:text-white">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
-            <h3 id="modal-title" class="text-xl font-bold font-outfit text-white mb-4">Add New Item</h3>
+            <h3 id="modal-title" class="text-lg sm:text-xl font-bold font-outfit text-white mb-4">Add New Item</h3>
             
             <form onsubmit="handleSaveItem(event)" class="space-y-4">
                 <input type="hidden" id="item-id">
                 
                 <div>
                     <label class="text-xs text-gray-300 block mb-1">Item Name *</label>
-                    <input type="text" id="modal-item-name" required placeholder="e.g. Hair Clip or Sugar 1kg" class="w-full glass-input px-3 py-2 rounded-xl text-sm">
+                    <input type="text" id="modal-item-name" required placeholder="e.g. Hair Clip or Sugar 1kg" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="text-xs text-gray-300 block mb-1">Category *</label>
-                        <select id="modal-item-cat" title="Item Category" aria-label="Item Category" class="w-full glass-input px-3 py-2 rounded-xl text-sm bg-gray-900">
+                        <select id="modal-item-cat" title="Item Category" aria-label="Item Category" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm bg-gray-900">
                             <option value="fancy">Fancy Item</option>
                             <option value="grocery">Grocery Item</option>
                         </select>
                     </div>
                     <div>
                         <label class="text-xs text-gray-300 block mb-1">Price (₹) *</label>
-                        <input type="number" step="0.5" id="modal-item-price" required placeholder="50" class="w-full glass-input px-3 py-2 rounded-xl text-sm">
+                        <input type="number" step="0.5" id="modal-item-price" required placeholder="50" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm">
                     </div>
                 </div>
 
                 <div>
                     <label class="text-xs text-gray-300 block mb-1">Stock Quantity</label>
-                    <input type="number" id="modal-item-stock" value="100" min="0" class="w-full glass-input px-3 py-2 rounded-xl text-sm">
+                    <input type="number" id="modal-item-stock" value="100" min="0" class="w-full glass-input px-3 py-2 rounded-xl text-base sm:text-sm">
                 </div>
 
                 <div class="flex justify-end gap-2 pt-2">
@@ -739,14 +691,14 @@
     </div>
 
     <!-- MODAL 2: RECEIPT MODAL -->
-    <div id="receipt-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md hidden p-4 overflow-y-auto">
-        <div class="glass-card rounded-2xl max-w-sm w-full p-4 border border-white/10 shadow-2xl relative text-gray-900 bg-white">
+    <div id="receipt-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md hidden p-3 sm:p-4 overflow-y-auto">
+        <div class="glass-card rounded-2xl max-w-sm w-full p-4 border border-white/10 shadow-2xl relative text-gray-900 bg-white my-auto">
             <button onclick="closeReceiptModal()" title="Close receipt modal" aria-label="Close receipt modal" class="absolute top-3 right-3 text-gray-500 hover:text-black">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             
             <!-- RECEIPT DESIGN AREA -->
-            <div id="printable-receipt-area" class="p-4 bg-white text-gray-900 font-sans text-xs">
+            <div id="printable-receipt-area" class="p-3 sm:p-4 bg-white text-gray-900 font-sans text-xs">
                 <div class="text-center border-b border-dashed border-gray-400 pb-3 mb-3">
                     <h2 class="text-xl font-bold font-outfit tracking-wide text-gray-900 uppercase">KRUPA STORE</h2>
                     <p class="text-[11px] text-gray-600">Retail Fancy & Grocery Store</p>
@@ -796,7 +748,7 @@
                     </div>
                 </div>
 
-                <!-- CREDIT BILL UNDENIABLE PROOF & SIGNATURE SECTION -->
+                <!-- CREDIT BILL PROOF & SIGNATURE SECTION -->
                 <div id="rec-credit-proof-box" class="mt-4 pt-3 border-t-2 border-dashed border-red-500 text-[11px] text-red-950 bg-red-50 p-2.5 rounded hidden">
                     <div class="font-extrabold text-center text-[11px] uppercase mb-1 tracking-wide text-red-700">
                         ⚠️ OFFICIAL CREDIT (UDHAR) PROOF
@@ -833,11 +785,13 @@
                     Close
                 </button>
             </div>
+        </div>
+    </div>
 
     <!-- MODAL 3: SECURITY LOCK OVERLAY MODAL -->
-    <div id="security-lock-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-xl hidden p-4">
-        <div class="glass-card rounded-3xl max-w-xs w-full p-6 border border-white/10 shadow-2xl text-center space-y-4 relative">
-            <div class="w-16 h-16 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-2xl mx-auto shadow-lg shadow-indigo-500/20">
+    <div id="security-lock-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-xl hidden p-4 overflow-y-auto">
+        <div class="glass-card rounded-3xl max-w-xs w-full p-6 border border-white/10 shadow-2xl text-center space-y-4 relative my-auto">
+            <div class="w-14 h-14 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xl mx-auto shadow-lg shadow-indigo-500/20">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
             
@@ -858,18 +812,18 @@
 
             <!-- Numeric Keypad for Mobile Screen -->
             <div class="grid grid-cols-3 gap-2 pt-1 max-w-[220px] mx-auto">
-                <button onclick="pressPinNum('1')" class="py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">1</button>
-                <button onclick="pressPinNum('2')" class="py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">2</button>
-                <button onclick="pressPinNum('3')" class="py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">3</button>
-                <button onclick="pressPinNum('4')" class="py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">4</button>
-                <button onclick="pressPinNum('5')" class="py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">5</button>
-                <button onclick="pressPinNum('6')" class="py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">6</button>
-                <button onclick="pressPinNum('7')" class="py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">7</button>
-                <button onclick="pressPinNum('8')" class="py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">8</button>
-                <button onclick="pressPinNum('9')" class="py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">9</button>
-                <button onclick="clearPinInput()" class="py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold rounded-xl text-xs transition active:scale-95">Clear</button>
-                <button onclick="pressPinNum('0')" class="py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">0</button>
-                <button onclick="submitPinUnlock()" class="py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg transition active:scale-95">Unlock</button>
+                <button onclick="pressPinNum('1')" class="min-h-[44px] py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">1</button>
+                <button onclick="pressPinNum('2')" class="min-h-[44px] py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">2</button>
+                <button onclick="pressPinNum('3')" class="min-h-[44px] py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">3</button>
+                <button onclick="pressPinNum('4')" class="min-h-[44px] py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">4</button>
+                <button onclick="pressPinNum('5')" class="min-h-[44px] py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">5</button>
+                <button onclick="pressPinNum('6')" class="min-h-[44px] py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">6</button>
+                <button onclick="pressPinNum('7')" class="min-h-[44px] py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">7</button>
+                <button onclick="pressPinNum('8')" class="min-h-[44px] py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">8</button>
+                <button onclick="pressPinNum('9')" class="min-h-[44px] py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">9</button>
+                <button onclick="clearPinInput()" class="min-h-[44px] py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold rounded-xl text-xs transition active:scale-95">Clear</button>
+                <button onclick="pressPinNum('0')" class="min-h-[44px] py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-base transition active:scale-95">0</button>
+                <button onclick="submitPinUnlock()" class="min-h-[44px] py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg transition active:scale-95">Unlock</button>
             </div>
 
             <div class="pt-1 text-[10px] text-gray-500">
@@ -882,6 +836,6 @@
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- External Custom JavaScript Application File -->
-    <script src="app.js" defer></script>
+    <script src="app.js?v=2" defer></script>
 </body>
 </html>
