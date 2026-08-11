@@ -1287,9 +1287,18 @@ function renderHistoryTable() {
     }
 
     tbody.innerHTML = filtered.map(b => {
-        let isCredit = (b.paymentStatus === 'credit');
+        let isCredit = (b.paymentStatus === 'credit' || (b.dueAmount !== undefined && b.dueAmount > 0));
+        let paid = b.paidAmount !== undefined 
+            ? b.paidAmount 
+            : (b.cashGiven > 0 ? Math.min(b.cashGiven, b.grandTotal) : (isCredit ? 0 : b.grandTotal));
+        let due = b.dueAmount !== undefined 
+            ? b.dueAmount 
+            : (isCredit ? Math.max(0, b.grandTotal - paid) : 0);
+
         let statusBadge = isCredit 
-            ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-500/20 text-red-300 border border-red-500/30 inline-flex items-center gap-1"><i class="fa-solid fa-clock"></i> CREDIT (UDHAR)</span>`
+            ? (due < b.grandTotal && paid > 0 
+                ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 inline-flex items-center gap-1"><i class="fa-solid fa-clock"></i> PARTIAL UDHAR</span>`
+                : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-500/20 text-red-300 border border-red-500/30 inline-flex items-center gap-1"><i class="fa-solid fa-clock"></i> CREDIT (UDHAR)</span>`)
             : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 inline-flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> PAID</span>`;
 
         let bookBadge = isCredit ? (
@@ -1297,6 +1306,11 @@ function renderHistoryTable() {
                 ? `<div class="mt-1 text-[10px] font-bold text-amber-300 flex items-center justify-center gap-1"><i class="fa-solid fa-book-bookmark"></i> Noted in Book</div>`
                 : `<div class="mt-1 text-[10px] font-medium text-gray-400 flex items-center justify-center gap-1"><i class="fa-solid fa-pen"></i> Not in Book</div>`
         ) : '';
+
+        let totalCellContent = `<div class="font-mono font-bold ${isCredit ? 'text-red-400' : 'text-emerald-400'}">₹${b.grandTotal}</div>`;
+        if (isCredit && due > 0 && paid > 0) {
+            totalCellContent += `<div class="text-[10px] text-emerald-400 font-normal">Paid: ₹${paid}</div><div class="text-[10px] text-red-400 font-extrabold">Due: ₹${due}</div>`;
+        }
 
         return `
             <tr class="hover:bg-white/5 transition">
@@ -1308,14 +1322,14 @@ function renderHistoryTable() {
                 </td>
                 <td class="px-4 py-3 text-center">${statusBadge}${bookBadge}</td>
                 <td class="px-4 py-3 text-center font-mono">${b.items.length} items</td>
-                <td class="px-4 py-3 text-right font-mono font-bold ${isCredit ? 'text-red-400' : 'text-emerald-400'}">₹${b.grandTotal}</td>
+                <td class="px-4 py-3 text-right">${totalCellContent}</td>
                 <td class="px-4 py-3 text-right space-x-1.5">
                     ${isCredit ? `
                         <button onclick="toggleBookNoted(${b.billNo})" title="Toggle physical book status" class="px-2.5 py-1 ${b.isBookNoted ? 'bg-amber-600/80 hover:bg-amber-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30'} text-xs font-semibold rounded-lg shadow transition">
                             <i class="fa-solid fa-book mr-1"></i> ${b.isBookNoted ? 'Noted' : '+ Book'}
                         </button>
                         <button onclick="openUdharSettlementModalForBill(${b.billNo})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow transition">
-                            <i class="fa-solid fa-check mr-1"></i> Mark Paid
+                            <i class="fa-solid fa-check mr-1"></i> Settle (₹${due})
                         </button>
                     ` : ''}
                     <button onclick='openReceiptModal(${JSON.stringify(b)})' class="px-2.5 py-1 bg-indigo-600/60 hover:bg-indigo-500 text-white text-xs rounded-lg transition">
@@ -1449,11 +1463,15 @@ function openUdharSettlementModalForBill(billNo) {
     const bill = billsHistory.find(b => b.billNo === billNo);
     if (!bill) return;
 
-    currentSettleTarget = { type: 'bill', billNo: bill.billNo, custName: bill.customerName, amount: bill.grandTotal };
+    let dueAmt = bill.dueAmount !== undefined 
+        ? bill.dueAmount 
+        : (bill.cashGiven > 0 ? Math.max(0, bill.grandTotal - bill.cashGiven) : bill.grandTotal);
+
+    currentSettleTarget = { type: 'bill', billNo: bill.billNo, custName: bill.customerName, amount: dueAmt };
     currentSettlePayMode = 'cash';
 
     document.getElementById('settle-modal-cust-name').innerText = `${bill.customerName} (Bill #${bill.billNo})`;
-    document.getElementById('settle-modal-cust-amt').innerText = `₹${bill.grandTotal}`;
+    document.getElementById('settle-modal-cust-amt').innerText = `₹${dueAmt}`;
 
     selectSettlePayMode('cash');
     document.getElementById('udhar-settlement-modal')?.classList.remove('hidden');
