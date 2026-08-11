@@ -827,18 +827,42 @@ function checkoutBill(showReceiptModal) {
 
     let custName = (document.getElementById('cust-name')?.value || '').trim();
     let custPhone = (document.getElementById('cust-phone')?.value || '').trim();
+    let cashGiven = parseFloat(document.getElementById('cash-given')?.value) || 0;
+    let subtotal = parseFloat(document.getElementById('bill-subtotal')?.innerText || '0');
+    let discount = parseFloat(document.getElementById('bill-discount')?.value) || 0;
+    let grandTotal = parseFloat(document.getElementById('bill-grand-total')?.innerText || '0');
 
-    if (currentPaymentMode === 'credit' && !custName) {
+    let paidAmt = 0;
+    let dueAmt = 0;
+    let effectivePayMode = currentPaymentMode;
+
+    if (currentPaymentMode === 'credit') {
+        paidAmt = Math.min(cashGiven, grandTotal);
+        dueAmt = Math.max(0, grandTotal - paidAmt);
+    } else {
+        if (cashGiven > 0 && cashGiven < grandTotal) {
+            // Partial Cash paid, rest is Udhar credit!
+            paidAmt = cashGiven;
+            dueAmt = grandTotal - cashGiven;
+            effectivePayMode = 'credit';
+            if (!custName) {
+                showToastNotification('⚠️ Customer Name is required when remaining amount is Udhar!', 'warning');
+                document.getElementById('cust-name')?.focus();
+                return;
+            }
+        } else {
+            paidAmt = grandTotal;
+            dueAmt = 0;
+        }
+    }
+
+    if (effectivePayMode === 'credit' && !custName) {
         showToastNotification('⚠️ Customer Name is required for Credit (Udhar) Bills!', 'warning');
         document.getElementById('cust-name')?.focus();
         return;
     }
 
     if (!custName) custName = 'Walk-in Customer';
-
-    let subtotal = parseFloat(document.getElementById('bill-subtotal')?.innerText || '0');
-    let discount = parseFloat(document.getElementById('bill-discount')?.value) || 0;
-    let grandTotal = parseFloat(document.getElementById('bill-grand-total')?.innerText || '0');
 
     const now = new Date();
     const billData = {
@@ -851,7 +875,10 @@ function checkoutBill(showReceiptModal) {
         subtotal: subtotal,
         discount: discount,
         grandTotal: grandTotal,
-        paymentStatus: currentPaymentMode,
+        cashGiven: cashGiven,
+        paidAmount: paidAmt,
+        dueAmount: dueAmt,
+        paymentStatus: effectivePayMode,
         isBookNoted: false
     };
 
@@ -871,7 +898,10 @@ function checkoutBill(showReceiptModal) {
     if (showReceiptModal) {
         openReceiptModal(billData);
     } else {
-        showToastNotification(`Bill #${billData.billNo} saved successfully as ${currentPaymentMode.toUpperCase()}! Total: ₹${grandTotal}`, 'success');
+        const toastMsg = dueAmt > 0 
+            ? `Bill #${billData.billNo} saved! Paid ₹${paidAmt}, Pending Udhar: ₹${dueAmt}`
+            : `Bill #${billData.billNo} saved as ${effectivePayMode.toUpperCase()}! Total: ₹${grandTotal}`;
+        showToastNotification(toastMsg, 'success');
     }
 
     clearBillCart();
@@ -890,11 +920,16 @@ function openReceiptModal(bill) {
     let stampStyle = 'bg-emerald-100 text-emerald-800 border-emerald-400';
     let isCredit = (bill.paymentStatus === 'credit');
 
+    let paid = bill.paidAmount !== undefined ? bill.paidAmount : (isCredit ? 0 : bill.grandTotal);
+    let due = bill.dueAmount !== undefined ? bill.dueAmount : (isCredit ? bill.grandTotal : 0);
+
     if (bill.paymentStatus === 'online') {
         statusText = '📱 ONLINE / UPI PAYMENT';
         stampStyle = 'bg-indigo-100 text-indigo-800 border-indigo-400';
     } else if (isCredit) {
-        statusText = '🔴 CREDIT BILL / UNPAID (KHATA)';
+        statusText = due < bill.grandTotal && paid > 0 
+            ? `🔴 PARTIAL UDHAR (PAID ₹${paid} | DUE ₹${due})` 
+            : '🔴 CREDIT BILL / UNPAID (KHATA)';
         stampStyle = 'bg-red-100 text-red-700 border-red-400';
     }
 
@@ -902,16 +937,32 @@ function openReceiptModal(bill) {
     const proofBox = document.getElementById('rec-credit-proof-box');
     const bookStamp = document.getElementById('rec-book-noted-stamp');
     const bookBtn = document.getElementById('rec-book-toggle-btn');
+    const paidRow = document.getElementById('rec-paid-row');
+    const dueRow = document.getElementById('rec-due-row');
 
     if (stamp) {
         stamp.className = `py-1 px-3 text-[11px] font-extrabold uppercase rounded border tracking-wider inline-block ${stampStyle}`;
         stamp.innerText = statusText;
     }
 
-    if (isCredit) {
+    if (due > 0) {
+        if (paidRow) {
+            paidRow.classList.remove('hidden');
+            document.getElementById('rec-paid-amt').innerText = paid;
+        }
+        if (dueRow) {
+            dueRow.classList.remove('hidden');
+            document.getElementById('rec-due-amt').innerText = due;
+        }
+    } else {
+        if (paidRow) paidRow.classList.add('hidden');
+        if (dueRow) dueRow.classList.add('hidden');
+    }
+
+    if (isCredit || due > 0) {
         if (proofBox) proofBox.classList.remove('hidden');
         const proofAmt = document.getElementById('rec-credit-proof-amt');
-        if (proofAmt) proofAmt.innerText = bill.grandTotal;
+        if (proofAmt) proofAmt.innerText = due;
 
         if (bookStamp) {
             bookStamp.classList.remove('hidden');
@@ -1134,12 +1185,14 @@ function markBillAsPaid(billNo, payMode = 'cash') {
 
     const modeLabel = payMode === 'online' ? 'ONLINE / UPI 📱' : 'CASH 💵';
     bill.paymentStatus = payMode;
+    bill.paidAmount = bill.grandTotal;
+    bill.dueAmount = 0;
     localStorage.setItem('krupa_bills', JSON.stringify(billsHistory));
     syncDataToSQLite();
     renderHistoryTable();
     renderCreditCustomersTable();
     updateHeaderStats();
-    showToastNotification(`Bill #${billNo} marked as PAID via ${modeLabel}!`, 'success');
+    showToastNotification(`Bill #${billNo} marked as fully PAID via ${modeLabel}!`, 'success');
 }
 
 function renderHistoryTable() {
@@ -1315,10 +1368,11 @@ function renderCreditCustomersTable() {
                     billNos: []
                 };
             }
-            creditMap[key].totalBalance += b.grandTotal;
+            let dueForThisBill = b.dueAmount !== undefined ? b.dueAmount : b.grandTotal;
+            creditMap[key].totalBalance += dueForThisBill;
             creditMap[key].unpaidBillsCount += 1;
             creditMap[key].billNos.push(b.billNo);
-            grandUdharTotal += b.grandTotal;
+            grandUdharTotal += dueForThisBill;
         }
     });
 
@@ -1434,8 +1488,11 @@ function payCustomerCreditAll(custName, custPhone, payMode = 'cash') {
 
     billsHistory.forEach(b => {
         if (b.paymentStatus === 'credit' && b.customerName === custName) {
+            let dueForThisBill = b.dueAmount !== undefined ? b.dueAmount : b.grandTotal;
             b.paymentStatus = payMode;
-            settledTotal += b.grandTotal;
+            b.paidAmount = b.grandTotal;
+            b.dueAmount = 0;
+            settledTotal += dueForThisBill;
             matchCount++;
         }
     });
@@ -1592,6 +1649,9 @@ function exportBillsToExcel() {
     const exportData = billsHistory.map(b => {
         const itemsSummary = (b.items || []).map(i => `${i.name} (${formatWeightOrQty(i.qty)})`).join(', ');
         const statusLabel = payStatusMap[b.paymentStatus] || 'CASH 💵';
+        const paidVal = b.paidAmount !== undefined ? b.paidAmount : (b.paymentStatus === 'credit' ? 0 : b.grandTotal);
+        const dueVal = b.dueAmount !== undefined ? b.dueAmount : (b.paymentStatus === 'credit' ? b.grandTotal : 0);
+
         return {
             "Bill No": `#${b.billNo}`,
             "Date & Time": b.date,
@@ -1601,6 +1661,8 @@ function exportBillsToExcel() {
             "Subtotal (₹)": b.subtotal,
             "Discount (₹)": b.discount,
             "Grand Total (₹)": b.grandTotal,
+            "Paid Amount (₹)": paidVal,
+            "Pending Udhar (₹)": dueVal,
             "Payment Method": statusLabel,
             "Noted in Book": b.isBookNoted ? 'YES' : 'NO'
         };
