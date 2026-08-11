@@ -66,55 +66,8 @@ const DEFAULT_ITEMS = [
     { id: 10, name: 'Wheat Flour 5kg', category: 'grocery', price: 230, stock: 50 }
 ];
 
-// Default Sample Bills History
-const DEFAULT_BILLS = [
-    {
-        billNo: 1000,
-        createdAt: Date.now() - 3600000 * 4,
-        date: new Date(Date.now() - 3600000 * 4).toLocaleString(),
-        customerName: 'Ramesh Kumar',
-        customerPhone: '9876543210',
-        items: [
-            { id: 1, name: 'Fancy Bangle Set', price: 150, qty: 2 },
-            { id: 8, name: 'Crystal Sugar 1kg', price: 48, qty: 1 }
-        ],
-        subtotal: 348,
-        discount: 0,
-        grandTotal: 348,
-        paymentStatus: 'paid'
-    },
-    {
-        billNo: 999,
-        createdAt: Date.now() - 3600000 * 24 * 3,
-        date: new Date(Date.now() - 3600000 * 24 * 3).toLocaleString(),
-        customerName: 'Suresh Reddy',
-        customerPhone: '9812345678',
-        items: [
-            { id: 6, name: 'Premium Rice 5kg', price: 340, qty: 1 },
-            { id: 7, name: 'Refined Cooking Oil 1L', price: 145, qty: 2 }
-        ],
-        subtotal: 630,
-        discount: 30,
-        grandTotal: 600,
-        paymentStatus: 'credit',
-        isBookNoted: true
-    },
-    {
-        billNo: 998,
-        createdAt: Date.now() - 3600000 * 24 * 10,
-        date: new Date(Date.now() - 3600000 * 24 * 10).toLocaleString(),
-        customerName: 'Anitha Sharma',
-        customerPhone: '9765432109',
-        items: [
-            { id: 2, name: 'Lipstick Matte Edition', price: 220, qty: 1 },
-            { id: 5, name: 'Nail Polish Velvet Red', price: 65, qty: 2 }
-        ],
-        subtotal: 350,
-        discount: 10,
-        grandTotal: 340,
-        paymentStatus: 'paid'
-    }
-];
+// Default Sample Bills History (Clean Store Initialization)
+const DEFAULT_BILLS = [];
 
 // App State Management
 let items = getStoredData('krupa_items', DEFAULT_ITEMS);
@@ -194,7 +147,7 @@ async function fetchDataFromServerSync(silent = false) {
         const res = await fetch('/api/sync-data?t=' + Date.now());
         if (res.ok) {
             const data = await res.json();
-            if (data && data.lastModified && data.lastModified > lastServerSyncTimestamp) {
+            if (data && data.lastModified && data.lastModified !== lastServerSyncTimestamp) {
                 lastServerSyncTimestamp = data.lastModified;
 
                 let hasChanges = false;
@@ -474,11 +427,12 @@ function importSystemData(e) {
 function clearHistoryData() {
     if (confirm('Are you sure you want to clear all sales history and Udhar logs?')) {
         billsHistory = [];
-        localStorage.removeItem('krupa_bills');
+        localStorage.setItem('krupa_bills', JSON.stringify([]));
         renderHistoryTable();
         renderCreditCustomersTable();
         updateHeaderStats();
-        showToastNotification('Sales history cleared!', 'info');
+        pushDataToServerSync();
+        showToastNotification('Sales history and sample bills cleared!', 'info');
     }
 }
 
