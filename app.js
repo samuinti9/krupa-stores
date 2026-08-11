@@ -847,31 +847,39 @@ function handleQuickCustomAdd(e) {
     e.preventDefault();
     const nameInput = document.getElementById('quick-item-name');
     const priceInput = document.getElementById('quick-item-price');
+    const pcsInput = document.getElementById('quick-item-pcs-val');
+    const weightSelect = document.getElementById('quick-item-weight-select');
+    const weightCustom = document.getElementById('quick-item-weight-custom');
 
     const name = nameInput ? nameInput.value.trim() : '';
     const price = priceInput ? parseFloat(priceInput.value) : 0;
+    const pcs = pcsInput ? (parseInt(pcsInput.value) || 1) : 1;
 
-    let qty = 1;
-    if (currentQuickUnitMode === 'pcs') {
-        const pcsVal = document.getElementById('quick-item-pcs-val');
-        qty = pcsVal ? (parseInt(pcsVal.value) || 1) : 1;
-    } else {
-        const weightSelect = document.getElementById('quick-item-weight-select');
-        const weightCustom = document.getElementById('quick-item-weight-custom');
-        if (weightSelect && weightSelect.value !== 'custom') {
-            qty = parseFloat(weightSelect.value) || 1;
-        } else if (weightCustom) {
-            qty = parseFloat(weightCustom.value) || 1;
+    let weightMultiplier = 1;
+    let weightLabel = '';
+
+    if (weightSelect && weightSelect.value !== 'none') {
+        if (weightSelect.value === 'custom' && weightCustom) {
+            weightMultiplier = parseFloat(weightCustom.value) || 1;
+        } else {
+            weightMultiplier = parseFloat(weightSelect.value) || 1;
         }
+        weightLabel = ` (${formatWeightOrQty(weightMultiplier)})`;
     }
 
-    if (name && price > 0 && qty > 0) {
-        addToCartDirect(name, price, qty);
+    const totalEffectiveQty = pcs * weightMultiplier;
+
+    if (name && price > 0 && totalEffectiveQty > 0) {
+        addToCartDirect(name + weightLabel, price, pcs);
         if (nameInput) nameInput.value = '';
         if (priceInput) priceInput.value = '';
-        const pcsVal = document.getElementById('quick-item-pcs-val');
-        if (pcsVal) pcsVal.value = '1';
-        showToastNotification(`Added custom item "${name}" (${formatWeightOrQty(qty)}) to bill!`, 'success');
+        if (pcsInput) pcsInput.value = '1';
+        if (weightSelect) weightSelect.value = 'none';
+        if (weightCustom) {
+            weightCustom.value = '';
+            weightCustom.classList.add('hidden');
+        }
+        showToastNotification(`Added "${name}" to bill!`, 'success');
     }
 }
 
